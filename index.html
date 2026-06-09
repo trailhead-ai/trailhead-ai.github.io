@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trailhead - scaffolding for agent-native development</title>
+  <meta name="description" content="AI can write the code. It can't yet be an engineer. Trailhead is the open-source scaffolding that closes the gap: memory, environment, and orchestration for agent-native development." />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Trailhead" />
+  <meta property="og:description" content="AI can write the code. It can't yet be an engineer. Trailhead is the scaffolding that closes the gap." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --paper: #f6f1e7;
+      --paper-2: #efe8da;
+      --ink: #201d18;
+      --ink-soft: #4a4338;
+      --pine: #2f4a3c;
+      --pine-soft: #3d5a4a;
+      --blaze: #c9572a;
+      --blaze-soft: #e08a5f;
+      --line: #d8cfbd;
+      --maxw: 820px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 18px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+      font-weight: 500;
+      line-height: 1.12;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    a { color: var(--pine); text-decoration: none; border-bottom: 1px solid var(--line); transition: color .15s, border-color .15s; }
+    a:hover { color: var(--blaze); border-color: var(--blaze-soft); }
+
+    code, pre { font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; }
+
+    /* ---------- hero ---------- */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--paper-2) 0%, var(--paper) 100%);
+    }
+    .hero svg.topo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .hero-inner {
+      position: relative;
+      padding: 96px 0 84px;
+    }
+    .wordmark {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 22px;
+      letter-spacing: 0.02em;
+      color: var(--pine);
+      margin-bottom: 56px;
+    }
+    .wordmark .blaze-mark {
+      width: 14px; height: 14px;
+      background: var(--blaze);
+      border-radius: 2px;
+      transform: rotate(45deg);
+      box-shadow: 0 0 0 4px rgba(201,87,42,0.14);
+    }
+    .hero h1 {
+      font-size: clamp(38px, 6.2vw, 62px);
+      margin: 0 0 24px;
+      max-width: 14ch;
+    }
+    .hero .lede {
+      font-size: clamp(19px, 2.4vw, 23px);
+      color: var(--ink-soft);
+      max-width: 56ch;
+      margin: 0 0 36px;
+    }
+    .hero .lede strong { color: var(--ink); font-weight: 600; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .btn {
+      display: inline-block;
+      padding: 12px 22px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-weight: 500;
+      font-size: 16px;
+    }
+    .btn-primary { background: var(--pine); color: var(--paper); }
+    .btn-primary:hover { background: var(--pine-soft); color: var(--paper); border-color: transparent; }
+    .btn-ghost { border-color: var(--line); color: var(--ink); }
+    .btn-ghost:hover { border-color: var(--blaze-soft); color: var(--blaze); }
+    .meta-line { margin-top: 28px; font-size: 14.5px; color: var(--ink-soft); letter-spacing: 0.01em; }
+
+    /* ---------- sections ---------- */
+    section { padding: 76px 0; border-bottom: 1px solid var(--line); }
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--blaze);
+      margin: 0 0 18px;
+    }
+    section h2 { font-size: clamp(28px, 4vw, 38px); margin: 0 0 26px; max-width: 22ch; }
+    .prose p { color: var(--ink-soft); max-width: 60ch; margin: 0 0 20px; }
+    .prose p strong { color: var(--ink); font-weight: 600; }
+    .prose p:last-child { margin-bottom: 0; }
+
+    /* ---------- tool cards ---------- */
+    .tools { display: grid; gap: 22px; margin-top: 8px; }
+    .tool {
+      background: var(--paper-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 30px 30px 28px;
+      position: relative;
+    }
+    .tool-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tool-head h3 { font-size: 27px; margin: 0; color: var(--pine); }
+    .tool-gap {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--blaze);
+      background: rgba(201,87,42,0.10);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .tool p { margin: 0 0 14px; color: var(--ink-soft); font-size: 16.5px; }
+    .tool p:last-child { margin-bottom: 0; }
+    .tool .repo-link { font-size: 15px; }
+
+    /* ---------- q&a (three questions) ---------- */
+    .qa { margin-top: 6px; display: grid; gap: 30px; }
+    .qa-item { display: grid; grid-template-columns: 2.4rem 1fr; gap: 20px; align-items: start; }
+    .qa-num {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 30px;
+      line-height: 1.1;
+      color: var(--blaze);
+    }
+    .qa-body h3 { font-size: 22px; margin: 0 0 8px; color: var(--ink); }
+    .qa-body p { margin: 0; color: var(--ink-soft); font-size: 16.5px; max-width: 60ch; }
+    .qa-body p strong { color: var(--pine); font-weight: 600; }
+    @media (max-width: 560px) { .qa-item { grid-template-columns: 1.8rem 1fr; gap: 14px; } }
+
+    /* ---------- code ---------- */
+    pre {
+      background: #211d18;
+      color: #ece4d4;
+      border-radius: 12px;
+      padding: 24px 26px;
+      overflow-x: auto;
+      font-size: 15px;
+      line-height: 1.8;
+      margin: 0 0 22px;
+      border: 1px solid #2e2820;
+    }
+    pre .c { color: #9c8f78; }      /* comment */
+    pre .p { color: var(--blaze-soft); } /* prompt / command head */
+    .note {
+      font-size: 15px;
+      color: var(--ink-soft);
+      background: var(--paper-2);
+      border-left: 3px solid var(--blaze);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      max-width: 62ch;
+    }
+    .note code { color: var(--ink); background: rgba(0,0,0,0.05); padding: 1px 5px; border-radius: 4px; }
+
+    /* ---------- faq ---------- */
+    .faq { margin-top: 10px; border-top: 1px solid var(--line); }
+    .faq details { border-bottom: 1px solid var(--line); }
+    .faq summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 22px 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 21px;
+      font-weight: 500;
+      color: var(--ink);
+      transition: color .15s;
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary:hover { color: var(--pine); }
+    .faq summary .chev {
+      flex: none;
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      font-size: 26px;
+      line-height: 1;
+      color: var(--blaze);
+      transition: transform .2s ease;
+    }
+    .faq details[open] summary .chev { transform: rotate(45deg); }
+    .faq .answer {
+      padding: 0 2px 26px;
+      max-width: 64ch;
+      color: var(--ink-soft);
+      font-size: 16.5px;
+    }
+    .faq .answer p { margin: 0 0 14px; }
+    .faq .answer p:last-child { margin: 0; }
+    .faq .answer a { color: var(--pine); }
+
+    /* ---------- footer ---------- */
+    footer { padding: 54px 0 64px; }
+    .footer-row { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; justify-content: space-between; }
+    footer .links { display: flex; gap: 24px; flex-wrap: wrap; }
+    footer a { border: none; font-size: 15.5px; }
+    footer .fine { font-size: 14px; color: var(--ink-soft); }
+
+    @media (max-width: 560px) {
+      body { font-size: 17px; }
+      .hero-inner { padding: 64px 0 60px; }
+      .wordmark { margin-bottom: 40px; }
+      section { padding: 56px 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <svg class="topo" viewBox="0 0 820 520" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <g fill="none" stroke="#cdbfa6" stroke-width="1.1">
+        <path d="M-40 120 C 160 60, 320 180, 520 120 S 880 60, 900 140" />
+        <path d="M-40 170 C 160 110, 330 230, 520 170 S 880 110, 900 190" />
+        <path d="M-40 230 C 180 170, 340 290, 540 230 S 880 170, 900 250" />
+        <path d="M-40 300 C 180 240, 360 360, 560 300 S 880 240, 900 320" />
+        <path d="M-40 380 C 200 320, 380 440, 580 380 S 880 320, 900 400" />
+        <path d="M-40 460 C 200 400, 400 520, 600 460 S 880 400, 900 480" />
+      </g>
+    </svg>
+    <div class="wrap hero-inner">
+      <div class="wordmark"><span class="blaze-mark"></span> trailhead</div>
+      <h1>AI can write the code. You&rsquo;re still the engineer.</h1>
+      <p class="lede">On its own, a coding agent starts every session from scratch, in a single repo, with no memory of what you already decided. <strong>Trailhead changes that</strong> - durable memory, a workspace that spans every related repo, and a process it actually follows - so working with it feels less like directing a tool and more like building alongside another engineer.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#start">Get started</a>
+        <a class="btn btn-ghost" href="https://github.com/trailhead-ai">View on GitHub</a>
+      </div>
+      <p class="meta-line">Open source &middot; Three agent-native plugins &middot; Adopt one or all three</p>
+    </div>
+  </header>
+
+  <main>
+    <section id="why">
+      <div class="wrap">
+        <p class="eyebrow">Why it exists</p>
+        <h2>Built because one engineer had to ship a whole product.</h2>
+        <div class="prose">
+          <p>Trailhead did not start as a thesis about AI tooling. It started as the daily kit of a sole engineer carrying an entire product: a backend, a web app, an iOS app, the infrastructure underneath, and the AI on top of it. The agents were good at writing code and bad at everything around it. They forgot yesterday&rsquo;s decisions. They had nowhere to work. They one-shot a hack when the job needed a plan.</p>
+          <p>So the gaps got filled, one painful Tuesday at a time. What ties the tools together is not a clever theory about AI; it is a plain goal - <strong>let the agent work the way a good engineer already works.</strong> Carry what it learned in one session into the next. Work across the several repos a real product spans, not one at a time. Keep track of the decisions, the lessons, and the dead-ends, so the next change builds on them instead of rediscovering them. The closer the agent works to how you work, the less time you spend re-explaining yourself and the more it feels like building alongside someone instead of managing a tool.</p>
+          <p>What is left is three small, sharp tools that map to the three things a coding agent is missing on its own - memory, environment, and process. They share one organizing idea: the unit of work is not a repo, it is a <strong>group</strong> of related repos. Memory is shared across the group, a workspace spans the group, and a release ships the group as one. That is the part most AI tooling skips, and it is where real products actually live.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tools">
+      <div class="wrap">
+        <p class="eyebrow">The suite</p>
+        <h2>Three tools for the three things a model lacks.</h2>
+        <div class="tools">
+
+          <article class="tool">
+            <div class="tool-head"><h3>lore</h3> <span class="tool-gap">Memory</span></div>
+            <p>Agents forget everything between sessions. lore is durable, structured project memory - a git-backed, plain-text vault of decisions, dead-ends, deferred work, and session notes. The things most tools never write down (what you tried and abandoned, what you are waiting on) are first-class here, and a session note carries the thread from one sitting to the next - so you start warm instead of re-explaining the project every morning.</p>
+            <p>Memory comes in layers - a personal layer that follows you across everything you build, and a shared layer scoped to the group. So a dead-end you hit in one project is there to warn you in the next, and a decision the group made lives above the repos instead of being trapped in one. Either way the knowledge compounds instead of resetting to zero.</p>
+            <a class="repo-link" href="https://github.com/trailhead-ai/trailhead/tree/main/tools/lore">lore on GitHub &rarr;</a>
+          </article>
+
+          <article class="tool">
+            <div class="tool-head"><h3>camp</h3> <span class="tool-gap">Environment</span></div>
+            <p>Real products are rarely one repo. camp treats a group of related repos as a single unit: one worktree spans every repo in the group on matching branches, with everything the product runs on stood up together in one dev environment from a single command.</p>
+            <p>The unit of work becomes the whole product, not a lone checkout. And because camp can bring each worktree&rsquo;s dev environment up in parallel, isolated from the rest, you can keep several going at once without them colliding.</p>
+            <a class="repo-link" href="https://github.com/trailhead-ai/trailhead/tree/main/tools/camp">camp on GitHub &rarr;</a>
+          </article>
+
+          <article class="tool">
+            <div class="tool-head"><h3>forge</h3> <span class="tool-gap">Orchestration</span></div>
+            <p>One-shot prompting does not do real engineering. forge is a roster of specialized subagents and a test-driven workflow that runs the real arc of a change - design it, plan it, prove the risky assumptions, build it test-first, then review - and treats that plan as a starting point, not a contract. It expects you to learn as you go: the agent drafts a mockup you can react to before any code is written, proves the shaky assumptions before anything gets built on them, and holds each decision until you actually have the facts to make it. The plan adapts as the work does.</p>
+            <p>Process, encoded - so the agent works the way a careful engineer would, not something that looks finished until you look closer.</p>
+            <a class="repo-link" href="https://github.com/trailhead-ai/trailhead/tree/main/tools/forge">forge on GitHub &rarr;</a>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <section id="how">
+      <div class="wrap">
+        <p class="eyebrow">Coordinated multi-repo work</p>
+        <h2>Three questions single-repo tooling can&rsquo;t answer.</h2>
+        <div class="qa">
+
+          <div class="qa-item">
+            <div class="qa-num">1</div>
+            <div class="qa-body">
+              <h3>Where does cross-repo knowledge live?</h3>
+              <p>A decision made in the backend constrains the client, and the knowledge that matters most is exactly the knowledge that spans repos. <strong>lore</strong> keeps memory above the repos, scoped to the group rather than trapped in one - so a call made while working in one repo is there in any sibling it touches.</p>
+            </div>
+          </div>
+
+          <div class="qa-item">
+            <div class="qa-num">2</div>
+            <div class="qa-body">
+              <h3>How does one change span several repos?</h3>
+              <p>A single feature is often a backend change and a client change and an infra change at once. <strong>camp</strong> cuts one worktree across every repo in the group on matching branches, bound by a manifest, so the unit of work is the whole change - built and tested together in one dev environment before any of it lands.</p>
+            </div>
+          </div>
+
+          <div class="qa-item">
+            <div class="qa-num">3</div>
+            <div class="qa-body">
+              <h3>How do they ship without breaking each other?</h3>
+              <p>Split a change across repos and you open a window where one is ahead of the others. <strong>forge</strong> lands the pieces as linked pull requests treated as one release - merged in dependency order, and the preview soaked together as a unit - so that window never opens.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <section id="start">
+      <div class="wrap">
+        <p class="eyebrow">Getting started</p>
+        <h2>Install the manager, then wire what you need.</h2>
+        <div class="prose" style="margin-bottom: 28px;">
+          <p>Trailhead ships as a small management CLI plus the three plugins. Each tool is self-contained and independently adoptable - wire all three, or just the one you want.</p>
+        </div>
+<pre><span class="p">$</span> git clone https://github.com/trailhead-ai/trailhead.git
+<span class="p">$</span> cd trailhead
+<span class="p">$</span> pip install .
+
+<span class="p">$</span> trailhead install                  <span class="c"># wire all three plugins</span>
+<span class="p">$</span> trailhead install --preset minimal <span class="c"># wire lore only</span></pre>
+        <div class="note">
+          Heads up: installing the package only gives you the <code>trailhead</code> manager. Run <code>trailhead install</code> to actually wire the tools into your agent harness - nothing is active until you do.
+        </div>
+      </div>
+    </section>
+
+    <section id="philosophy">
+      <div class="wrap">
+        <p class="eyebrow">The shape of it</p>
+        <h2>It works with you, not for you.</h2>
+        <div class="prose">
+          <p>Trailhead does not force a way of working on you. The tools are separate on purpose - take lore for memory and keep whatever workflow you already like, whether that is a framework like superpowers or plain old Plan mode. forge&rsquo;s process is there when you want structure and out of the way when you don&rsquo;t. You wire up the parts that help and leave the rest.</p>
+          <p>Left alone, a model will happily act on a guess and hand you something confident and wrong. Trailhead does not make the model smarter - it gives your agent the habits of a careful engineer: prove a shaky assumption with a throwaway test before building on it, go research what it does not know instead of inventing it, and review its own work against the plan before calling it done. The model still does the thinking; Trailhead just makes sure it shows its work.</p>
+        </div>
+      </div>
+    </section>
+    <section id="faq">
+      <div class="wrap">
+        <p class="eyebrow">Questions</p>
+        <h2>The short answers.</h2>
+        <div class="faq">
+
+          <details open>
+            <summary>Do I have to use all three tools? <span class="chev">+</span></summary>
+            <div class="answer">
+              <p>No. Each one stands on its own - lore is a memory layer for any agentic setup, camp is multi-repo worktree and dev-environment orchestration, forge is the planning and execution workflow. Adopt one, two, or all three. forge is never a dependency of the other two.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Does this replace my note-taking app? <span class="chev">+</span></summary>
+            <div class="answer">
+              <p>No. lore is agent-native project memory - typed, machine-readable knowledge the agent captures and recalls to do work. It does a different job than a personal knowledge base, and it sits happily alongside whatever you already use for notes.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Does my code or data leave my machine? <span class="chev">+</span></summary>
+            <div class="answer">
+              <p>No. Everything is local-first and plain-text - a git-backed vault and plain files on disk. There is no cloud service in the loop and nothing phones home, which also makes the suite a fit for regulated environments.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Which agent harness does it work with? <span class="chev">+</span></summary>
+            <div class="answer">
+              <p>Trailhead is built harness-neutral. The real work lives in plain CLIs and a plain-text vault behind a thin adapter, so it wires into your agent rather than locking you into one.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Can my team or company self-host it? <span class="chev">+</span></summary>
+            <div class="answer">
+              <p>Yes. Forked and self-hosted installs are first-class - point it at your own repositories, run the whole suite off your own infrastructure, no hardcoded upstream and no callbacks required.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>What does it cost? <span class="chev">+</span></summary>
+            <div class="answer">
+              <p>lore, camp, and forge are open source under Apache-2.0. Free to use, free to fork.</p>
+            </div>
+          </details>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-row">
+      <span class="fine">Apache-2.0 &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
+      <span class="links">
+        <a href="https://github.com/trailhead-ai">GitHub</a>
+        <a href="#why">Why</a>
+        <a href="#tools">Tools</a>
+        <a href="#start">Get started</a>
+        <a href="#faq">FAQ</a>
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>
