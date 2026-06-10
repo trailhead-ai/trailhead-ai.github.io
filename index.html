@@ -281,7 +281,7 @@
         <a class="btn btn-primary" href="#start">Get started</a>
         <a class="btn btn-ghost" href="https://github.com/trailhead-ai">View on GitHub</a>
       </div>
-      <p class="meta-line">Open source &middot; Three agent-native plugins &middot; Adopt one or all three</p>
+      <p class="meta-line">Open source &middot; Composable agent-native plugins &middot; Start with memory, add the rest as you go</p>
     </div>
   </header>
 
@@ -306,7 +306,7 @@
 
           <article class="tool">
             <div class="tool-head"><h3>lore</h3> <span class="tool-gap">Memory</span></div>
-            <p>Agents forget everything between sessions. lore is durable, structured project memory - a git-backed, plain-text vault of decisions, dead-ends, deferred work, and session notes. The things most tools never write down (what you tried and abandoned, what you are waiting on) are first-class here, and a session note carries the thread from one sitting to the next - so you start warm instead of re-explaining the project every morning.</p>
+            <p>Agents forget everything between sessions. lore is durable, structured project memory - a git-backed, plain-text vault of decisions, dead-ends, deferred work, and session notes. The things most tools never write down (what you tried and abandoned, what you are waiting on) are first-class here, and a session note carries the thread from one sitting to the next - so you start warm instead of re-explaining the project every morning. When you come back, it surfaces only the memory that bears on what you are working on, not the whole vault.</p>
             <p>Memory comes in layers - a personal layer that follows you across everything you build, and a shared layer scoped to the group. So a dead-end you hit in one project is there to warn you in the next, and a decision the group made lives above the repos instead of being trapped in one. Either way the knowledge compounds instead of resetting to zero.</p>
             <a class="repo-link" href="https://github.com/trailhead-ai/trailhead/tree/main/tools/lore">lore on GitHub &rarr;</a>
           </article>
@@ -355,10 +355,24 @@
             <div class="qa-num">3</div>
             <div class="qa-body">
               <h3>How do they ship without breaking each other?</h3>
-              <p>Split a change across repos and you open a window where one is ahead of the others. <strong>forge</strong> lands the pieces as linked pull requests treated as one release - merged in dependency order, and the preview soaked together as a unit - so that window never opens.</p>
+              <p>Split a change across repos and you open a window where one is ahead of the others. <strong>forge</strong> lands the pieces as linked pull requests treated as one release - merged in dependency order - so that window never opens.</p>
             </div>
           </div>
 
+        </div>
+      </div>
+    </section>
+
+    <section id="efficiency">
+      <div class="wrap">
+        <p class="eyebrow">Token economy</p>
+        <h2>Built to spend fewer tokens, not more.</h2>
+        <div class="prose">
+          <p>Most agent tooling quietly inflates your context - more rules, more files, more transcript dragged along every turn - and you pay for it on every call. Trailhead treats the opposite as a design goal: where a choice can do the same job for fewer tokens, it takes it. A few of the ways that shows up:</p>
+          <p><strong>Specialized subagents on the right model.</strong> forge hands the bulky, low-judgment work - reading test logs, diffs, CI output, long files, wide searches - to small subagents running on the cheapest capable model. Only their conclusion comes back, so the expensive model never pays to read the raw stream.</p>
+          <p><strong>Recall that loads only what is relevant.</strong> lore pulls the slice of memory that bears on what you are doing, not the whole vault - so recall cost scales with relevance, not with how much you have piled up. And because every note is typed and conventional in shape, the agent spends little effort working out what a document is and whether it matters.</p>
+          <p><strong>Checkpoint, then clear.</strong> lore can snapshot the state that matters from a session into its notes - so when a context window fills with noise you can compact or clear it and pick the thread back up warm, instead of dragging a bloated transcript along just to keep your place.</p>
+          <p><strong>Install only what you will use.</strong> Every skill and agent you wire in costs context on every turn. Trailhead lets you pick capabilities - start with just memory, add the planning circle, the dev environment, or design authoring when you actually want them - so you never pay context for power you are not using.</p>
         </div>
       </div>
     </section>
@@ -368,13 +382,13 @@
         <p class="eyebrow">Getting started</p>
         <h2>Install the manager, then wire what you need.</h2>
         <div class="prose" style="margin-bottom: 28px;">
-          <p>Trailhead ships as a small management CLI plus the three plugins. Each tool is self-contained and independently adoptable - wire all three, or just the one you want.</p>
+          <p>Trailhead ships as a small management CLI plus the plugins it manages. Each tool is self-contained and independently adoptable - wire them all, or just the one you want. Most people start with lore: it asks you to change nothing about how you already work, and you grow into camp and forge when the need shows up.</p>
         </div>
 <pre><span class="p">$</span> git clone https://github.com/trailhead-ai/trailhead.git
 <span class="p">$</span> cd trailhead
 <span class="p">$</span> pip install .
 
-<span class="p">$</span> trailhead install                  <span class="c"># wire all three plugins</span>
+<span class="p">$</span> trailhead install                  <span class="c"># wire all the plugins</span>
 <span class="p">$</span> trailhead install --preset minimal <span class="c"># wire lore only</span></pre>
         <div class="note">
           Heads up: installing the package only gives you the <code>trailhead</code> manager. Run <code>trailhead install</code> to actually wire the tools into your agent harness - nothing is active until you do.
@@ -399,9 +413,9 @@
         <div class="faq">
 
           <details open>
-            <summary>Do I have to use all three tools? <span class="chev">+</span></summary>
+            <summary>Do I have to use all of them? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>No. Each one stands on its own - lore is a memory layer for any agentic setup, camp is multi-repo worktree and dev-environment orchestration, forge is the planning and execution workflow. Adopt one, two, or all three. forge is never a dependency of the other two.</p>
+              <p>No. Each one stands on its own - lore is a memory layer for any agentic setup, camp is multi-repo worktree and dev-environment orchestration, forge is the planning and execution workflow. Adopt one, some, or all of them. forge is never a dependency of the others.</p>
             </div>
           </details>
 
