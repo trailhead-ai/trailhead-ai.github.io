@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Trailhead - scaffolding for agent-native development</title>
-  <meta name="description" content="AI can write the code. It can't yet be an engineer. Trailhead is the scaffolding that closes the gap: memory, environment, and orchestration for agent-native development. Open source, coming soon." />
+  <meta name="description" content="AI can write the code. It can't yet be an engineer. Trailhead is the scaffolding that closes the gap: memory, environment, and process for agent-native development. Open source, coming soon." />
 
   <!-- Open Graph -->
   <meta property="og:title" content="Trailhead" />
@@ -293,7 +293,7 @@
         <div class="prose">
           <p>Trailhead did not start as a thesis about AI tooling. It started as the daily kit of a sole engineer carrying an entire product: a backend, a web app, an iOS app, the infrastructure underneath, and the AI on top of it. The agents were good at writing code and bad at everything around it. They forgot yesterday&rsquo;s decisions. They had nowhere to work. They one-shot a hack when the job needed a plan.</p>
           <p>So the gaps got filled, one painful Tuesday at a time. What ties the tools together is not a clever theory about AI; it is a plain goal - <strong>let the agent work the way a good engineer already works.</strong> Carry what it learned in one session into the next. Work across the several repos a real product spans, not one at a time. Keep track of the decisions, the lessons, and the dead-ends, so the next change builds on them instead of rediscovering them. The closer the agent works to how you work, the less time you spend re-explaining yourself and the more it feels like building alongside someone instead of managing a tool.</p>
-          <p>What is left is three small, sharp tools that map to the three things a coding agent is missing on its own - memory, environment, and process. They share one organizing idea: the unit of work is not a repo, it is a <strong>group</strong> of related repos. Memory is shared across the group, a workspace spans the group, and a release ships the group as one. That is the part most AI tooling skips, and it is where real products actually live.</p>
+          <p>What is left is a small, sharp toolset that maps to what a coding agent is missing on its own - memory, environment, and process. They share one organizing idea: the unit of work is not a repo, it is a <strong>group</strong> of related repos. Memory is shared across the group, a workspace spans the group, and a release ships the group as one. That is the part most AI tooling skips, and it is where real products actually live.</p>
         </div>
       </div>
     </section>
@@ -301,7 +301,7 @@
     <section id="tools">
       <div class="wrap">
         <p class="eyebrow">The suite</p>
-        <h2>Three tools for the three things a model lacks.</h2>
+        <h2>Built for what a model lacks.</h2>
         <div class="tools">
 
           <article class="tool">
@@ -317,10 +317,33 @@
           </article>
 
           <article class="tool">
-            <div class="tool-head"><h3>forge</h3> <span class="tool-gap">Orchestration</span></div>
-            <p>One-shot prompting does not do real engineering. forge is a roster of specialized subagents and a test-driven workflow that runs the real arc of a change - design it, plan it, prove the risky assumptions, build it test-first, then review - and treats that plan as a starting point, not a contract. It expects you to learn as you go: the agent drafts a mockup you can react to before any code is written, proves the shaky assumptions before anything gets built on them, and holds each decision until you actually have the facts to make it. The plan adapts as the work does.</p>
+            <div class="tool-head"><h3>craft</h3> <span class="tool-gap">Process</span></div>
+            <p>One-shot prompting does not do real engineering. craft is a roster of specialized subagents and a test-driven workflow that runs the real arc of a change - design it, plan it, prove the risky assumptions, build it test-first, then review - and treats that plan as a starting point, not a contract. It expects you to learn as you go: the agent drafts a mockup you can react to before any code is written, proves the shaky assumptions before anything gets built on them, and holds each decision until you actually have the facts to make it. The plan adapts as the work does.</p>
             <p>Process, encoded - so the agent works the way a careful engineer would, not something that looks finished until you look closer.</p>
           </article>
+
+          <!-- LAUNCH: uncomment at release. Flip checklist for this release:
+               1. Uncomment the portage tool card below.
+               2. Uncomment the landing tool card below.
+               3. Uncomment the install block in the Getting Started (Status) section.
+               4. REWRITE the Status section copy by hand (it currently says the public repositories aren't open yet) - uncommenting does not fix this line; it must be rewritten to say the repos are now public and installable.
+               5. Re-check that the suite intro prose and the head meta description still read true now that there are 5 tools, not 3. -->
+          <!--
+          <article class="tool">
+            <div class="tool-head"><h3>portage</h3> <span class="tool-gap">Shipping</span></div>
+            <p>Shipping a change across several repos opens a window where one repo is ahead of the others. portage closes it - it treats the linked pull requests for a change as one release, watches CI on each as they land, and merges them in dependency order so the group moves together instead of drifting out of sync.</p>
+            <p>The unit of release becomes the group, not a lone pull request - so nothing ships half-updated.</p>
+          </article>
+          -->
+
+          <!-- LAUNCH: uncomment at release -->
+          <!--
+          <article class="tool">
+            <div class="tool-head"><h3>landing</h3> <span class="tool-gap">Deploy health</span></div>
+            <p>A merge landing clean is not the same as a deploy staying healthy. landing soaks each deploy after it lands - watching the health signal that matters for the minutes after a merge - and if something regresses, it investigates the failure and escalates with a diagnosis instead of leaving you to notice a silent breakage.</p>
+            <p>Merging is not the finish line - landing keeps watching after the merge does.</p>
+          </article>
+          -->
 
         </div>
       </div>
@@ -352,7 +375,7 @@
             <div class="qa-num">3</div>
             <div class="qa-body">
               <h3>How do they ship without breaking each other?</h3>
-              <p>Split a change across repos and you open a window where one is ahead of the others. <strong>forge</strong> lands the pieces as linked pull requests treated as one release - merged in dependency order - so that window never opens.</p>
+              <p>Split a change across repos and you open a window where one is ahead of the others. <strong>trailhead</strong> lands the pieces as linked pull requests treated as one release - merged in dependency order - so that window never opens.</p>
             </div>
           </div>
 
@@ -366,7 +389,7 @@
         <h2>Built to spend fewer tokens, not more.</h2>
         <div class="prose">
           <p>Most agent tooling quietly inflates your context - more rules, more files, more transcript dragged along every turn - and you pay for it on every call. Trailhead treats the opposite as a design goal: where a choice can do the same job for fewer tokens, it takes it. A few of the ways that shows up:</p>
-          <p><strong>Specialized subagents on the right model.</strong> forge hands the bulky, low-judgment work - reading test logs, diffs, CI output, long files, wide searches - to small subagents running on the cheapest capable model. Only their conclusion comes back, so the expensive model never pays to read the raw stream.</p>
+          <p><strong>Specialized subagents on the right model.</strong> craft hands the bulky, low-judgment work - reading test logs, diffs, CI output, long files, wide searches - to small subagents running on the cheapest capable model. Only their conclusion comes back, so the expensive model never pays to read the raw stream.</p>
           <p><strong>Recall that loads only what is relevant.</strong> lore pulls the slice of memory that bears on what you are doing, not the whole vault - so recall cost scales with relevance, not with how much you have piled up. And because every note is typed and conventional in shape, the agent spends little effort working out what a document is and whether it matters.</p>
           <p><strong>Checkpoint, then clear.</strong> lore can snapshot the state that matters from a session into its notes - so when a context window fills with noise you can compact or clear it and pick the thread back up warm, instead of dragging a bloated transcript along just to keep your place.</p>
           <p><strong>Install only what you will use.</strong> Every skill and agent you wire in costs context on every turn. Trailhead lets you pick capabilities - start with just memory, add the planning circle, the dev environment, or design authoring when you actually want them - so you never pay context for power you are not using.</p>
@@ -379,12 +402,20 @@
         <p class="eyebrow">Status</p>
         <h2>Coming soon.</h2>
         <div class="prose" style="margin-bottom: 28px;">
-          <p>Trailhead is in daily use building real products - and it is being readied for an open-source release: the small management CLI plus the lore, camp, and forge plugins it manages. Each tool is self-contained and independently adoptable, so when it lands most people will start with lore and grow into camp and forge as the need shows up.</p>
+          <p>Trailhead is in daily use building real products - and it is being readied for an open-source release: the small management CLI plus the lore, camp, and craft plugins it manages. Each tool is self-contained and independently adoptable, so when it lands most people will start with lore and grow into camp and craft as the need shows up.</p>
           <p>The public repositories aren&rsquo;t open yet. The install flow and per-tool docs land with the release.</p>
         </div>
         <div class="note">
           Want to know when it ships? Watch the <a href="https://github.com/trailhead-ai">trailhead-ai</a> org - the repositories go public at launch.
         </div>
+
+        <!-- LAUNCH: uncomment at release -->
+        <!--
+        <pre><span class="p">$ git clone https://github.com/trailhead-ai/trailhead.git trailhead</span>
+<span class="p">$ cd trailhead</span>
+<span class="p">$ ./bin/trailhead install</span>
+<span class="c"># requires Python 3.11 or newer, no pip install step, restart your shell (or start a fresh agent session) afterward</span></pre>
+        -->
       </div>
     </section>
 
@@ -393,7 +424,7 @@
         <p class="eyebrow">The shape of it</p>
         <h2>It works with you, not for you.</h2>
         <div class="prose">
-          <p>Trailhead does not force a way of working on you. The tools are separate on purpose - take lore for memory and keep whatever workflow you already like, whether that is a framework like superpowers or plain old Plan mode. forge&rsquo;s process is there when you want structure and out of the way when you don&rsquo;t. You wire up the parts that help and leave the rest.</p>
+          <p>Trailhead does not force a way of working on you. The tools are separate on purpose - take lore for memory and keep whatever workflow you already like, whether that is a framework like superpowers or plain old Plan mode. craft&rsquo;s process is there when you want structure and out of the way when you don&rsquo;t. You wire up the parts that help and leave the rest.</p>
           <p>Left alone, a model will happily act on a guess and hand you something confident and wrong. Trailhead does not make the model smarter - it gives your agent the habits of a careful engineer: prove a shaky assumption with a throwaway test before building on it, go research what it does not know instead of inventing it, and review its own work against the plan before calling it done. The model still does the thinking; Trailhead just makes sure it shows its work.</p>
         </div>
       </div>
@@ -407,7 +438,7 @@
           <details open>
             <summary>Do I have to use all of them? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>No. Each one stands on its own - lore is a memory layer for any agentic setup, camp is multi-repo worktree and dev-environment orchestration, forge is the planning and execution workflow. Adopt one, some, or all of them. forge is never a dependency of the others.</p>
+              <p>No. Each one stands on its own - lore is a memory layer for any agentic setup, camp is multi-repo worktree and dev-environment orchestration, craft is the planning and execution workflow. Adopt one, some, or all of them. craft is never a dependency of the others.</p>
             </div>
           </details>
 
@@ -428,7 +459,7 @@
           <details>
             <summary>Which agent harness does it work with? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>Trailhead is built harness-neutral. The real work lives in plain CLIs and a plain-text vault, so it wires into your agent rather than locking you into one.</p>
+              <p>Trailhead is harness-neutral by design - every capability wires through a harness seam, a single interface between the tools and whatever agent is driving them. Claude Code is what it runs on today; supporting a new harness means implementing that one interface, not rewriting the tools themselves.</p>
             </div>
           </details>
 
@@ -442,7 +473,7 @@
           <details>
             <summary>What does it cost? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>lore, camp, and forge will be open source under Apache-2.0 at launch - free to use, free to fork.</p>
+              <p>lore, camp, and craft will be open source under Apache-2.0 at launch - free to use, free to fork.</p>
             </div>
           </details>
 
