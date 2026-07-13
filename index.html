@@ -322,6 +322,29 @@
             <p>Process, encoded - so the agent works the way a careful engineer would, not something that looks finished until you look closer.</p>
           </article>
 
+          <!-- LAUNCH: uncomment at release. Flip checklist for this release:
+               1. Uncomment the portage tool card below.
+               2. Uncomment the landing tool card below.
+               3. Uncomment the install block in the Getting Started (Status) section.
+               4. REWRITE the Status section copy by hand (it currently says the public repositories aren't open yet) - uncommenting does not fix this line; it must be rewritten to say the repos are now public and installable.
+               5. Re-check that the suite intro prose and the head meta description still read true now that there are 5 tools, not 3. -->
+          <!--
+          <article class="tool">
+            <div class="tool-head"><h3>portage</h3> <span class="tool-gap">Shipping</span></div>
+            <p>Shipping a change across several repos opens a window where one repo is ahead of the others. portage closes it - it treats the linked pull requests for a change as one release, watches CI on each as they land, and merges them in dependency order so the group moves together instead of drifting out of sync.</p>
+            <p>The unit of release becomes the group, not a lone pull request - so nothing ships half-updated.</p>
+          </article>
+          -->
+
+          <!-- LAUNCH: uncomment at release -->
+          <!--
+          <article class="tool">
+            <div class="tool-head"><h3>landing</h3> <span class="tool-gap">Deploy health</span></div>
+            <p>A merge landing clean is not the same as a deploy staying healthy. landing soaks each deploy after it lands - watching the health signal that matters for the minutes after a merge - and if something regresses, it investigates the failure and escalates with a diagnosis instead of leaving you to notice a silent breakage.</p>
+            <p>Merging is not the finish line - landing keeps watching after the merge does.</p>
+          </article>
+          -->
+
         </div>
       </div>
     </section>
@@ -385,6 +408,14 @@
         <div class="note">
           Want to know when it ships? Watch the <a href="https://github.com/trailhead-ai">trailhead-ai</a> org - the repositories go public at launch.
         </div>
+
+        <!-- LAUNCH: uncomment at release -->
+        <!--
+        <pre><span class="p">$ git clone https://github.com/trailhead-ai/trailhead.git trailhead</span>
+<span class="p">$ cd trailhead</span>
+<span class="p">$ ./bin/trailhead install</span>
+<span class="c"># requires Python 3.11 or newer, no pip install step, restart your shell (or start a fresh agent session) afterward</span></pre>
+        -->
       </div>
     </section>
 
