@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trailhead docs - camp</title>
+  <meta name="description" content="camp: one workspace spanning every repository in a group, on matching branches, provisioned and ready. Groups, workspaces, tasks, bookmarks, and the full command reference." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="wordmark" href="../index.html"><span class="blaze-mark"></span> trailhead</a>
+      <nav>
+        <a href="index.html" class="current">Docs</a>
+        <a href="../index.html#tools">Tools</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="docs-shell">
+    <aside class="docs-nav">
+      <h4>Getting started</h4>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="quickstart.html">Quickstart</a></li>
+        <li><a href="concepts.html">Concepts</a></li>
+      </ul>
+      <h4>Plugins</h4>
+      <ul>
+        <li><a href="lore.html">lore &mdash; memory</a></li>
+        <li><a href="camp.html" class="current">camp &mdash; workspaces</a></li>
+        <li><a href="craft.html">craft &mdash; process</a></li>
+        <li><a href="portage.html">portage &mdash; shipping</a></li>
+        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
+        <li><a href="outpost.html">outpost &mdash; review</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-main">
+      <p class="eyebrow">Plugin</p>
+      <h1>camp &mdash; multi-repo workspaces</h1>
+      <p class="lede">One command opens a workspace spanning every repository in a group: a git worktree per repo, all on the same branch, provisioned and ready to work in. One command tears it down.</p>
+
+      <p>A real feature rarely lives in one repository. It touches the API, the client, and the shared schema package, and those are three checkouts, three branches with three chances to name them differently, and three sets of bootstrap steps before anything runs. Doing that by hand is tedious for a person and error-prone for an agent &mdash; the most common failure is not a bad edit, it is an edit made in the wrong checkout, or on the wrong branch, or in a tree that was never bootstrapped.</p>
+
+      <p><code>camp</code> makes that unit &mdash; the set of worktrees a single change spans &mdash; a first-class thing with a name. You declare a <strong>group</strong> once: the repositories you work on together. From then on <code>camp new &lt;slug&gt;</code> creates a git worktree in every member repo on a branch derived from the slug, runs whatever provisioning steps you configured, and hands back one directory containing all of them. <code>camp status</code> answers &ldquo;is it ready?&rdquo; and <code>camp remove</code> takes the whole thing away.</p>
+
+      <p>camp is deliberately narrow about what it does <em>not</em> do. It never starts, stops, or replaces a process, and it never changes your shell&rsquo;s directory on its own. It answers <em>where to go and what to run</em>, and a small shell wrapper acts on that answer. That boundary is why camp is safe for an agent to call: the worst it can do is print a path.</p>
+
+      <div class="note">
+        <p>camp works <strong>without the other plugins and outside a harness session</strong> &mdash; it needs no <code>lore</code> vault and no <code>craft</code> ritual. It is not trailhead-free, though: the <code>camp</code> CLI locates a trailhead checkout by walking up from its own location, or via <code>$TRAILHEAD_ROOT</code>, and exits if it finds neither.</p>
+      </div>
+
+      <h2>Key concepts</h2>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Term</th><th>What it means</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Group</strong></td><td>A named set of repositories worked on together, declared in one TOML file. Each repository belongs to <strong>exactly one</strong> group &mdash; camp validates this and refuses to resolve a repo listed in two groups, naming both.</td></tr>
+            <tr><td><strong>Member</strong></td><td>One repository in a group: a <code>name</code>, an absolute <code>repo_root</code>, an optional <code>base</code> branch (default <code>origin/main</code>), and optional named tasks.</td></tr>
+            <tr><td><strong>Workspace</strong></td><td>The whole multi-worktree unit for one slug &mdash; one directory holding a worktree per member, plus a manifest. Lives at <code>state_dir("camp")/&lt;group&gt;/worktrees/&lt;slug&gt;/&lt;member&gt;</code>.</td></tr>
+            <tr><td><strong>Slug</strong></td><td>The workspace&rsquo;s name and address. Matches <code>^[a-z0-9-]+$</code>; other input is normalized, with a notice on stderr. Path-traversal sequences and shell metacharacters are rejected outright, not normalized.</td></tr>
+            <tr><td><strong>Worktree</strong></td><td>One member&rsquo;s git worktree inside the workspace. A real checkout of that repo &mdash; git commands work normally in it.</td></tr>
+            <tr><td><strong>Branch pattern</strong></td><td>How the slug becomes a branch name. Default <code>worktree-{slug}</code>, so slug <code>login-rework</code> gives branch <code>worktree-login-rework</code> in every member.</td></tr>
+            <tr><td><strong>Task</strong></td><td>A named, multi-step provisioning unit referenced per member. Steps are argv lists (never a shell string) with <code>{repo_root}</code> / <code>{worktree}</code> / <code>{workspace}</code> / <code>{slug}</code> placeholders. Carries <code>phase</code> (<code>provision</code>, the default, or <code>activate</code>), <code>required</code> (default <code>false</code>), and <code>timeout_seconds</code>. Completion is recorded per member in the manifest, so a task that finished <code>ok</code> is never re-run &mdash; only failed and never-run tasks execute.</td></tr>
+            <tr><td><strong>Harness profile</strong></td><td>Optional <code>[harness]</code> block: <code>doc_files</code> (the workspace doc to write, default <code>CLAUDE.md</code>), <code>binary</code> (harness binary name, default <code>claude</code> &mdash; only its basename is read; camp does not launch it), <code>inject</code> (<code>claude-hook</code> or <code>stdout</code>), and <code>pretrust</code> (pre-seed Claude Code&rsquo;s per-directory trust flag, default <code>true</code>).</td></tr>
+            <tr><td><strong>Bookmark and ref</strong></td><td>A durable named pointer from a workspace back to the harness session you were running in it. The <strong>ref</strong> is its short name (<code>^[a-z0-9][a-z0-9._-]{0,63}$</code>, defaulting to the slug); the store is global to the machine, so a ref resolves without knowing its group.</td></tr>
+            <tr><td><strong>Drift</strong></td><td>Disagreement between the workspace manifest, git&rsquo;s own worktree list, and the instance registry. <code>camp doctor</code> checks that consistency; <code>camp status --json</code> carries a <code>drift</code> block. See <a href="#limits">honest limits</a> for what is a placeholder today.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Setting up a group</h2>
+
+      <p>Group configs live at <code>config_dir("camp")/groups/&lt;name&gt;.toml</code> &mdash; on every platform including macOS that is <code>~/.config/camp/groups/&lt;name&gt;.toml</code>. One file per group. You can write it by hand, but the CLI authors it for you:</p>
+
+<pre><span class="p">$ camp group demo --member api=/Users/you/code/api --member web=/Users/you/code/web</span></pre>
+
+      <p>That authors the config from the flags and wires the session hooks into each member repo. It refuses to overwrite an existing config unless you pass <code>--force</code>, and it verifies each <code>repo_root</code> exists and is a git repository unless you pass <code>--allow-missing</code>. <code>camp group &lt;name&gt; --scaffold</code> writes a commented stub for you to edit by hand instead (and wires no hooks); <code>camp group &lt;name&gt;</code> with no other flags re-wires hooks for a group that is already configured.</p>
+
+      <h3>An annotated config</h3>
+
+      <p>This is trailhead&rsquo;s own group config, trimmed. Everything past <code>[group]</code> and <code>[[members]]</code> is optional.</p>
+
+<pre><span class="c"># ~/.config/camp/groups/trailhead.toml</span>
+[group]
+name = "trailhead"
+
+[[members]]
+name = "trailhead"
+repo_root = "/path/to/trailhead"
+<span class="c"># Named tasks this member opts into, referenced by name.</span>
+tasks = ["code-review-graph"]
+
+[[members]]
+name = "trailhead-ai.github.io"
+repo_root = "/path/to/trailhead-ai.github.io"
+
+[[members]]
+name = "outpost"
+repo_root = "/path/to/outpost"
+
+[branch]
+<span class="c"># Slug 'login-rework' becomes branch 'worktree-login-rework'.</span>
+pattern = "worktree-{slug}"
+
+<span class="c"># A group-level named task. Steps are argv lists, run with shell=False.</span>
+<span class="c"># phase:           "provision" (on worktree creation and each SessionStart</span>
+<span class="c">#                  reconcile) or "activate" (on first `camp activate`).</span>
+<span class="c"># required:        false means a failure warns in `camp status` and continues.</span>
+<span class="c"># timeout_seconds: per-step subprocess timeout.</span>
+[tasks.code-review-graph]
+phase = "provision"
+required = false
+timeout_seconds = 180
+
+[[tasks.code-review-graph.steps]]
+name = "build"
+cmd = ["code-review-graph", "build", "--repo", "{worktree}"]
+
+<span class="c"># Optional. Omit it entirely and camp uses the claude defaults:</span>
+<span class="c"># doc_files = ["CLAUDE.md"], binary = "claude", inject = "claude-hook".</span>
+<span class="c"># [harness]</span>
+<span class="c"># doc_files = ["AGENTS.md"]   # Codex, Copilot, Cursor read this instead</span>
+<span class="c"># inject = "stdout"           # universal floor; any [harness] block</span>
+<span class="c">#                             # without an explicit inject defaults here</span>
+<span class="c"># pretrust = false            # claude launches only</span></pre>
+
+      <div class="note">
+        <p>Task steps, and every other command in a group config, are <strong>author-trusted local input</strong>. camp runs them as argv lists with no shell, but sharing group configs from authors you do not trust is explicitly out of scope.</p>
+      </div>
+
+      <h2>The workspace lifecycle</h2>
+
+      <p><strong>Create or enter.</strong> <code>camp new &lt;slug&gt;</code> is the single entry point for both. If no manifest exists for that slug it creates the workspace &mdash; a worktree per member on the pattern branch &mdash; and provisions in the background; if one does exist it re-enters without re-provisioning or clobbering anything. Either way the workspace&rsquo;s absolute path is the only thing on stdout.</p>
+
+      <p><strong>Check it.</strong> <code>camp status</code> with a slug resolvable from cwd or <code>--name</code> prints the per-member provision state &mdash; <code>pending</code>, <code>ready</code>, or <code>failed</code> &mdash; and exits with a code an agent can branch on: <code>0</code> all ready, <code>2</code> some pending, <code>3</code> some failed. Run outside any workspace it prints the fleet-wide table of every workspace, its branch, and its members, and exits <code>0</code>. <code>camp list</code> (alias <code>ls</code>) prints slug and path, one per line, for scripting.</p>
+
+      <p><strong>Provision and activate.</strong> <code>camp setup</code> re-runs outstanding work for a workspace &mdash; pending or failed members and any task not yet recorded <code>ok</code>. <code>camp activate &lt;member&gt;</code> runs that member&rsquo;s <code>activate</code>-phase tasks and surfaces its workspace doc (<code>CLAUDE.md</code> by default) as context for the current session.</p>
+
+      <p><strong>Work across members.</strong> <code>camp foreach &lt;cmd&gt;</code> runs a command in each member worktree with no shell interpretation, skipping members whose worktree is absent. <code>--fail-fast</code> stops at the first failure; <code>--json</code> gives a per-member result map.</p>
+
+      <p><strong>Keep it current.</strong> <code>camp sync</code> fast-forwards canonical checkouts to <code>origin/main</code> and is safe by default &mdash; a dirty or off-main repo is skipped, not reset, unless you pass <code>--force</code>. <code>camp rebase [--onto &lt;branch&gt;]</code> rebases the workspace branches onto <code>origin/main</code> and stops with the conflicting repo named when a rebase conflicts. Both have real caveats today; see <a href="#limits">honest limits</a>.</p>
+
+      <p><strong>Tear it down.</strong> <code>camp remove</code> (alias <code>rm</code>) removes the workspace and its worktrees. It refuses on a dirty tree unless you pass <code>--force</code>, and it is guarded when the workspace still holds a bookmark. On success it clears that workspace&rsquo;s bookmarks and prints the first member&rsquo;s repo root &mdash; the place your shell should land, since the directory it was standing in no longer exists. On any failure, including partial removal, stdout is empty and the exit is nonzero.</p>
+
+      <h3>camp never moves your shell &mdash; the wrapper does</h3>
+
+      <p>Three verbs answer a question whose answer is a place: <code>camp new</code> (go here), <code>camp remove</code> (you can no longer stand there, go here instead), and <code>camp resume</code> (go here and run this). camp prints those answers and stops. Acting on them &mdash; the <code>cd</code>, and for <code>resume</code> the launch of the harness &mdash; needs a shell function, which is what the trailhead <code>shellenv</code> line installs:</p>
+
+<pre><span class="p">$ eval "$(/path/to/trailhead/bin/trailhead shellenv)"</span>
+<span class="c"># add that to your shell profile — fish, zsh, and bash are all handled</span></pre>
+
+      <p>The wrapper it defines intercepts those three verbs and acts on what camp printed. Without it, <code>camp resume</code> <strong>refuses outright</strong> rather than printing two lines that look like success and do nothing. <code>camp new</code> and <code>camp remove</code> still do their work and print the path, but nothing takes you there &mdash; they add a one-line tip on stderr pointing at the <code>shellenv</code> line. If a camp command tells you the shell integration is not active, this is the fix.</p>
+
+      <div class="note">
+        <p><code>camp resume</code> replaces your shell&rsquo;s foreground process. A user runs it in their own shell &mdash; an agent should relay the command, not run it on the user&rsquo;s behalf.</p>
+      </div>
+
+      <h2>Bookmarks</h2>
+
+      <p>A bookmark is a durable named pointer from a camp workspace to the harness session you were running in it &mdash; what turns &ldquo;pick this back up next week&rdquo; into one command. Capture is cwd-scoped: run it from inside the workspace you want to keep, and the ref defaults to that workspace&rsquo;s slug.</p>
+
+<pre><span class="p">$ camp bookmark --ref login --note "waiting on the schema PR"</span>
+<span class="p">$ camp bookmark ls</span>
+<span class="p">$ camp resume login</span>
+<span class="p">$ camp bookmark rm login</span></pre>
+
+      <p>A workspace holds at most one bookmark. Re-capturing under the same ref updates it in place; re-capturing under a different ref is refused, naming the existing one, because dropping a bookmark is always explicit. A ref already held by another workspace is refused rather than stolen.</p>
+
+      <p><code>ls</code>, <code>rm</code>, and <code>resume</code> address a ref, so they work from any directory including outside every group. <code>camp bookmark ls</code> lists every bookmark on the machine, most recently updated first, and marks rows that need attention: <code>[workspace gone]</code> or <code>[transcript gone]</code> when the bookmark points at nothing (the fix is <code>rm</code>), and <code>[expires ~Nd]</code> when the harness&rsquo;s own transcript retention is closing in. Bookmarks outlive that retention window &mdash; after cleanup a bookmark is a pointer to nothing.</p>
+
+      <h2>Hooks camp writes into your repos</h2>
+
+      <p>Wiring a group modifies files in your repositories, so it is worth knowing exactly what changes. <code>camp group</code> writes a <strong>SessionStart</strong> hook entry into each member repo&rsquo;s <code>.claude/settings.json</code>, invoking camp&rsquo;s own session-bootstrap handler. Each workspace additionally gets its own <code>.claude/settings.json</code> with a SessionStart hook that reports provision status, and &mdash; when the inject strategy is <code>claude-hook</code> &mdash; a <strong>PostToolUse</strong> hook that loads a member&rsquo;s doc silently into context mid-session instead of dumping it to the log.</p>
+
+      <p>The writes go through a JSON load-and-dump, never string templating: unrelated keys are preserved, paths with spaces or quotes round-trip, and re-running adds no duplicate entries. The command is written as <code>${CAMP_BIN:-&lt;absolute path&gt;}</code> so you can override the binary without editing settings files.</p>
+
+      <h2>Command reference</h2>
+
+      <p>Every command below is verified against <code>camp --help</code> and the CLI source. <code>--group &lt;name&gt;</code> works on any group-aware command to target a group from outside it; <code>--dry-run</code> (or <code>CAMP_DRY_RUN=1</code>) prints what camp would execute without running it.</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Command</th><th>Does</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>camp new &lt;slug&gt;</code></td><td>Create or re-enter a workspace. Prints its path on stdout.</td></tr>
+            <tr><td><code>camp pwd &lt;slug&gt;</code></td><td>Print a workspace path &mdash; exactly one line on stdout, safe for <code>cd "$(camp pwd &lt;slug&gt;)"</code>.</td></tr>
+            <tr><td><code>camp group &lt;name&gt; [--member NAME=PATH] [--branch-pattern P] [--scaffold] [--force] [--allow-missing]</code></td><td>Author a group config and wire hooks.</td></tr>
+            <tr><td><code>camp list [--json]</code></td><td>List all workspaces. Alias <code>ls</code>.</td></tr>
+            <tr><td><code>camp status [--name &lt;slug&gt;] [--json]</code></td><td>Per-member provision state (exit 0/2/3) or the fleet table.</td></tr>
+            <tr><td><code>camp activate &lt;member&gt; [--name &lt;slug&gt;]</code></td><td>Run a member&rsquo;s activate-phase tasks and surface its workspace doc.</td></tr>
+            <tr><td><code>camp setup [--background] [--json]</code></td><td>Provision or retry members and outstanding tasks.</td></tr>
+            <tr><td><code>camp remove [--force] [--name &lt;slug&gt;]</code></td><td>Tear a workspace down. Alias <code>rm</code>.</td></tr>
+            <tr><td><code>camp sync [--force] [--json]</code></td><td>Fast-forward canonical checkouts to <code>origin/main</code>.</td></tr>
+            <tr><td><code>camp rebase [--onto &lt;branch&gt;] [--name &lt;slug&gt;]</code></td><td>Rebase the workspace branches.</td></tr>
+            <tr><td><code>camp foreach [--fail-fast] [--json] &lt;cmd&gt;</code></td><td>Run a command in each member worktree.</td></tr>
+            <tr><td><code>camp bookmark [--ref &lt;ref&gt;] [--note &lt;text&gt;]</code></td><td>Bookmark this workspace&rsquo;s harness session.</td></tr>
+            <tr><td><code>camp bookmark ls</code> / <code>camp bookmark rm &lt;ref&gt;</code></td><td>List every bookmark / drop one. Any cwd.</td></tr>
+            <tr><td><code>camp resume &lt;ref&gt;</code></td><td>Re-enter a bookmarked session. Requires the shell integration.</td></tr>
+            <tr><td><code>camp doctor [--json]</code></td><td>Read-only health check: toolchain resolution plus manifest, git-worktree, and registry consistency.</td></tr>
+            <tr><td><code>camp --version</code> / <code>camp --which</code></td><td>Version and resolved group / the resolved binary path.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>A worked example</h2>
+
+      <p>Two repositories, one change spanning both.</p>
+
+<pre><span class="c"># 1. Declare the group, once. Writes ~/.config/camp/groups/demo.toml</span>
+<span class="c">#    and wires the SessionStart hook into both repos.</span>
+<span class="p">$ camp group demo --member api=/Users/you/code/api --member web=/Users/you/code/web</span>
+
+<span class="c"># 2. Open a workspace. With the shellenv wrapper active this also cd's you in.</span>
+<span class="p">$ camp new login-rework</span>
+camp new: created workspace 'login-rework' — provisioning in the background
+  check provisioning: camp status login-rework
+  activates when ready, or run: camp activate login-rework
+/Users/you/.local/state/camp/demo/worktrees/login-rework
+
+<span class="c"># 3. Both repos are checked out on worktree-login-rework, side by side.</span>
+<span class="p">$ ls</span>
+api  web
+
+<span class="c"># 4. Is it ready? Exits 0 all ready, 2 some pending, 3 some failed.</span>
+<span class="p">$ camp status</span>
+
+<span class="c"># 5. Work normally — these are ordinary git checkouts.</span>
+<span class="p">$ camp foreach git status --short</span>
+
+<span class="c"># 6. Stopping for the week? Name the session so you can come back.</span>
+<span class="p">$ camp bookmark --ref login --note "waiting on the schema PR"</span>
+<span class="p">$ camp resume login</span>
+
+<span class="c"># 7. Done. Refuses on a dirty tree without --force, and returns you</span>
+<span class="c">#    to the group repo because the directory you were in is gone.</span>
+<span class="p">$ camp remove</span></pre>
+
+      <h2 id="limits">Honest limits</h2>
+
+      <p>camp is in daily use, and these are the sharp edges worth knowing before you plan around it.</p>
+
+      <div class="note">
+        <p><strong>The shell wrapper is not optional in practice.</strong> Without <code>eval "$(trailhead shellenv)"</code> in your profile, <code>camp resume</code> refuses to run at all, and <code>camp new</code> and <code>camp remove</code> leave your shell wherever it was. This is the most common source of confusion with camp.</p>
+        <p><strong>Dev-environment orchestration is deferred.</strong> There is no <code>[dev_env]</code> capability in the group config and camp&rsquo;s <code>doctor</code> carries no dev-env probes. Provisioning is what you write into tasks, nothing more.</p>
+        <p><strong><code>camp sync</code> is narrower than it reads.</strong> Today it fast-forwards trailhead&rsquo;s own canonical checkout rather than every member of your group; operating on group members is future work.</p>
+        <p><strong><code>camp rebase</code> delegates to a helper script</strong> that is not shipped in the repository today, so it fails with a &ldquo;rebase script not found&rdquo; error unless you supply one. Rebasing member branches by hand, or via <code>camp foreach</code>, works fine in the meantime.</p>
+        <p><strong>Registry-drift detection is a placeholder.</strong> Nothing writes the instance registry yet, so the <code>drift</code> block in <code>camp status --json</code> is always empty and <code>camp doctor</code>&rsquo;s consistency check always reports no drift. The manifest and git-worktree halves of that check are real.</p>
+        <p><strong>Claude Code is the only harness implemented.</strong> Harness profiles do support <code>AGENTS.md</code>-style doc files and a <code>stdout</code> injection floor that works with any tool, but the session hooks and the trust pre-seed are Claude Code integrations.</p>
+      </div>
+
+      <div class="pager"><a class="prev" href="lore.html"><span class="dir">Previous</span> &larr; lore</a><a class="next" href="craft.html"><span class="dir">Next</span> craft &rarr;</a></div>
+    </main>
+  </div>
+
+  <footer class="docs-foot">
+    <div class="wrap footer-row">
+      <span class="fine">Apache-2.0 &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
+      <span class="links">
+        <a href="../index.html">Home</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>

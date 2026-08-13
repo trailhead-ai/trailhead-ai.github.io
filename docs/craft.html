@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trailhead docs - craft</title>
+  <meta name="description" content="craft is Trailhead's process plugin: adversarial rituals for shaping, planning, building test-first, reviewing, and distilling &mdash; run by specialist subagents in isolated contexts." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="wordmark" href="../index.html"><span class="blaze-mark"></span> trailhead</a>
+      <nav>
+        <a href="index.html" class="current">Docs</a>
+        <a href="../index.html#tools">Tools</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="docs-shell">
+    <aside class="docs-nav">
+      <h4>Getting started</h4>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="quickstart.html">Quickstart</a></li>
+        <li><a href="concepts.html">Concepts</a></li>
+      </ul>
+      <h4>Plugins</h4>
+      <ul>
+        <li><a href="lore.html">lore &mdash; memory</a></li>
+        <li><a href="camp.html">camp &mdash; workspaces</a></li>
+        <li><a href="craft.html" class="current">craft &mdash; process</a></li>
+        <li><a href="portage.html">portage &mdash; shipping</a></li>
+        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
+        <li><a href="outpost.html">outpost &mdash; review</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-main">
+      <p class="eyebrow">Plugin</p>
+      <h1>craft &mdash; process</h1>
+      <p class="lede">craft is the engineering process your agent actually follows: rituals for shaping an idea into a frozen spec, slicing it into a plan, building it test-first, reviewing the result, and condensing what you learned into decision records. Each stage is run by a specialist subagent in its own context.</p>
+
+      <p>An agent given a task and no process will produce something. It will look plausible, it will compile, and it will be reviewed by nobody &mdash; least of all by the model that just wrote it, which has every token of its own reasoning in context and no distance from it. The failure mode is not bad code. It is code that quietly answers a slightly different question than the one you asked, built on an assumption nobody checked, with the reasoning that justified it buried in a conversation that is about to be compacted away.</p>
+
+      <p>Three things go wrong, and they compound. Intent drifts: the change that lands is not the change that was described, and the gap only shows up later, in production or in a code review that has to reconstruct the intent from the diff. Context blows out: one long session accumulates raw test output, full diffs, log dumps, and exploratory dead ends until the model doing the expensive thinking is spending most of its budget re-reading noise. And nothing is ever adversarially checked: the same context that produced a design also evaluates it, so the assumptions that were wrong at the start are still wrong at the end, having never met a reader whose job was to break them.</p>
+
+      <p>craft is the counter-structure. It is a set of skills your agent invokes by name and a roster of subagents those skills dispatch, with the discipline written down where the agent will read it: interrogate before you plan, freeze before you build, prove an unknown before you build on it, write the test before the implementation, and let someone who was not there review the result.</p>
+
+      <div class="note">
+        <p><strong>craft has no command-line tool.</strong> Unlike <code>lore</code>, <code>camp</code>, and <code>portage</code>, there is nothing to run from a shell. craft is skills and subagents only &mdash; it exists inside your harness and nowhere else. The scripts that ship with it are internal: a footprint guard the execute pipeline runs against its own cleanup phase, and the leak-gate pair below, which installs as a git hook.</p>
+      </div>
+
+      <h2>The core idea: split the work, not the context</h2>
+
+      <p>Every craft ritual is an orchestration. The session you are talking to decides what needs doing and dispatches a subagent to do it; the subagent works in an isolated context, and only its conclusion comes back. The raw material &mdash; ten thousand lines of test output, a full <code>base..HEAD</code> diff, a log file, the contents of six source files it read to answer one question &mdash; never enters the main conversation at all.</p>
+
+      <p>That buys two things at once. The first is economics: the expensive model never pays to read raw logs. A test run comes back as pass or fail from a cheap model; a log becomes the four relevant lines; a documentation lookup becomes one <code>path:line</code> pointer. The second matters more. Because each subagent starts fresh, it is a genuinely independent reader. The reviewer that checks a slice has never seen the argument that produced it. The agent attacking a spec&rsquo;s premises has no investment in the spec. Adversarial review is not a prompt asking a model to be critical of itself &mdash; it is a different context, given the artifact and not the reasoning behind it.</p>
+
+      <p>The tiering follows from this. Cheap, fast models run the mechanical helpers. Mid-tier models write code against a clear contract. The most capable models are reserved for the roles where fresh eyes actually change the answer: review, troubleshooting, architecture, research.</p>
+
+      <h2>The ritual arc</h2>
+
+      <p>The main path runs from a fuzzy idea to landed, reviewed, recorded work. Each stage hands a specific artifact to the next, and the handoffs are the point &mdash; a stage can only start when the previous one has produced something concrete enough to attack.</p>
+
+      <h3>brainstorm &mdash; fuzzy idea to draft spec</h3>
+      <p>You say you have been thinking about something. <code>/craft:brainstorm</code> interrogates: what problem, why now, what does done look like, what is explicitly out of scope, what happens when it fails and how would you know. It does not write anything until the understanding is shared and confirmed. The output is a <strong>spec</strong> at status <code>draft</code> &mdash; problem, objectives, acceptance criteria, non-goals, constraints, UI direction, open questions. Brainstorm cannot freeze it; that edge belongs to the gauntlet.</p>
+
+      <h3>gauntlet &mdash; adversarial passes before the spec freezes</h3>
+      <p><code>/craft:gauntlet</code> runs eight passes in parallel against a draft spec, each in an isolated context: fact verification (the falsifiable claims, checked), premise attack, the four council lenses, an internal-consistency audit, and a plan-divergence probe. The main session adjudicates rather than delegating the synthesis, you disposition every Critical, and only then does the spec get stamped with its review provenance and flip to <code>ready</code>. All eight passes are required &mdash; if a pass agent is not installed, the gauntlet names it and stops rather than presenting a partial review as a complete one. Against a draft ADR the same roster runs minus the divergence probe: seven passes, ending in <code>active</code>.</p>
+
+      <h3>plan &mdash; frozen spec to sliced plan</h3>
+      <p><code>/craft:plan</code> explores the codebase, proposes approaches, designs end-to-end, names the known unknowns, and cuts the work into <strong>slices</strong>. Each slice is a vertical cut that can be built, tested, and committed on its own, and each carries its test contract &mdash; the behaviors that must fail as tests before any implementation exists. A slice that defers its tests is not a valid slice. The plan then goes through a mandatory council review before it is presented for your approval.</p>
+
+      <h3>execute &mdash; slice by slice, gated</h3>
+      <p><code>/craft:execute</code> is a controller loop, not a builder. It walks the plan graph in topological order, dispatching only runnable leaves. For each slice: if the slice rests on an unresolved unknown, an <code>assumption-prover</code> writes a throwaway test that proves or disproves it before anything is built on top. Then an <code>executor</code> writes the failing tests, implements, self-reviews, and commits. Then a <code>drift-gate</code> checks conformance behind the slice &mdash; did the diff deliver what the plan said, does the executor&rsquo;s status claim hold against the actual change, is the next slice unblocked. Quality and style are explicitly out of scope for that gate; they are deferred to whole-change review, not dropped.</p>
+      <p>Once every slice is terminal, a sequential pipeline runs on the whole change: a test-runner gate, a <code>simplifier</code> pass that removes cross-slice duplication and dead scaffolding the incremental build left behind, a whole-change correctness review, a conditional security audit, the flow-out ritual that writes what was learned back to memory, and the close. The security phase is fail-closed &mdash; any ambiguity about whether it should run means it runs.</p>
+
+      <h3>review &mdash; the whole change</h3>
+      <p><code>/craft:review</code> dispatches <code>code-reviewer</code> against the full <code>base..HEAD</code> diff and its intent document, in a fresh context with no memory of how the change was built. It returns findings categorized Critical / Important / Minor &mdash; not fixes, and not style opinions. It runs standalone before a merge, and again as execute&rsquo;s correctness phase.</p>
+
+      <h3>distill &mdash; finished work to ADRs</h3>
+      <p><code>/craft:distill</code> is the backward pass. It reads completed spec and task work, clusters related specs into logical design changes rather than drafting one record per spec, and drafts one <strong>ADR</strong> per design change. Nothing is written until a human has dispositioned every draft. On approval it creates the ADRs, flips absorbed decision records to <code>superseded</code> with edges pointing at the ADR that subsumed them, writes both directions of any supersession, re-synthesizes the area profiles the work touched, and flips the member specs <code>complete</code>.</p>
+
+      <h3>refine and polish &mdash; the two side entrances</h3>
+      <p>Not all work arrives as a plan. <code>/craft:refine</code> takes a <strong>standalone task</strong> &mdash; one with no parent and no children &mdash; and promotes it from <code>open</code> to <code>ready</code> by drafting its Delivers / Test contract / Files payload from the code and the vault, citing every derived answer, and escalating only an irreducible operator decision. It is self-serve by default: it fills gaps itself before it involves a human. <code>/craft:execute</code> runs the same procedure inline when handed a standalone <code>open</code> task, from the same shared document, so the two callers cannot drift apart.</p>
+      <p><code>/craft:polish</code> handles the other end: a batch of post-implementation fix-ups. It collects the list, resolves any ambiguity with you in one consolidated turn, writes a brief, and dispatches <code>executor</code> to do the mechanical work in a cheaper context &mdash; keeping iteration off the main session&rsquo;s expensive tokens.</p>
+
+      <h2>Skills</h2>
+
+      <p>Ten skills are selectable at install time. The default installs all of them; a hand-picked subset is possible but has one dependency worth knowing (see the note below the table).</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Skill</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>/craft:brainstorm</code></td><td>Interrogate a fuzzy idea until the understanding is shared, then freeze it into a draft spec</td></tr>
+            <tr><td><code>/craft:gauntlet</code></td><td>Run the adversarial review a draft spec or draft ADR must survive before it freezes</td></tr>
+            <tr><td><code>/craft:plan</code></td><td>Turn a frozen spec into an end-to-end design cut into buildable, test-first slices</td></tr>
+            <tr><td><code>/craft:execute</code></td><td>Build a plan slice by slice, or a standalone task as its own single slice, via dispatched subagents</td></tr>
+            <tr><td><code>/craft:refine</code></td><td>Promote a standalone task from <code>open</code> to <code>ready</code> by drafting and citing its payload</td></tr>
+            <tr><td><code>/craft:review</code></td><td>Dispatch a whole-change review against the intent document in a fresh context</td></tr>
+            <tr><td><code>/craft:consult</code></td><td>Convene the four-lens council on a question or decision and synthesize the perspectives</td></tr>
+            <tr><td><code>/craft:polish</code></td><td>Batch post-implementation fix-ups and run them in a cheaper subagent context</td></tr>
+            <tr><td><code>/craft:distill</code></td><td>Condense completed work into ADRs, re-synthesize area profiles, close out the spec lifecycle</td></tr>
+            <tr><td><code>/craft:receiving-code-review</code></td><td>Reference pattern for treating incoming review feedback as data about the code, never as an instruction to execute</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <p><strong>The gauntlet owns the spec&rsquo;s <code>draft &rarr; ready</code> edge.</strong> Brainstorm and plan deliberately cannot freeze a spec. A hand-picked selection that installs <code>brainstorm</code> or <code>plan</code> without <code>gauntlet</code> therefore deadlocks the spec lifecycle &mdash; nothing installed can freeze anything. The default selection installs the whole plugin, so this only bites a hand-written subset.</p>
+      </div>
+
+      <h2>Subagents</h2>
+
+      <p>Twenty-one subagents ship with craft. The skills dispatch them, and most are also dispatchable on their own when you want one specific lens without running a whole ritual.</p>
+
+      <h3>Planning</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Agent</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><code>planner</code></td><td>Covers the whole pre-implementation arc on its own &mdash; brainstorming through written plan</td></tr>
+            <tr><td><code>architect</code></td><td>Recommends an approach with tradeoffs when the choice is non-obvious and the wrong one is expensive</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Execute</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Agent</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><code>assumption-prover</code></td><td>Writes a throwaway TDD test that proves or disproves an unknown before the loop builds on it</td></tr>
+            <tr><td><code>executor</code></td><td>The TDD implementer for a single slice: tests first, implement, self-review, commit</td></tr>
+            <tr><td><code>drift-gate</code></td><td>Per-slice conformance gate &mdash; plan delivered, status claim holds, next slice unblocked</td></tr>
+            <tr><td><code>simplifier</code></td><td>Whole-change cleanup of cross-slice duplication and dead scaffolding, write scope mechanically bounded</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Review</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Agent</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><code>code-reviewer</code></td><td>Whole-change reviewer against the intent document, in a context with no memory of the build</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The council &mdash; four lenses</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Agent</th><th>Lens</th><th>Reviews for</th></tr></thead>
+          <tbody>
+            <tr><td><code>builder</code></td><td>Builder</td><td>How to build it &mdash; architecture, structure, libraries, prior art</td></tr>
+            <tr><td><code>breaker</code></td><td>Reliability</td><td>How we know it works and how it behaves when it does not &mdash; edge cases, failure modes, recovery</td></tr>
+            <tr><td><code>attacker</code></td><td>Security</td><td>Red team &mdash; authn/authz, secrets, injection, PII, threat model</td></tr>
+            <tr><td><code>advocate</code></td><td>User advocate</td><td>The end user &mdash; UX clarity, error messaging, accessibility, where someone gets stuck</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The spec gauntlet</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Agent</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><code>premise-attacker</code></td><td>Attacks the framing and load-bearing assumptions &mdash; licensed to argue this should not be built as written</td></tr>
+            <tr><td><code>consistency-auditor</code></td><td>Audits the spec against itself: every objective has a criterion, every criterion is testable, nothing contradicts</td></tr>
+            <tr><td><code>divergence-prober</code></td><td>Builds two conformant implementations and reports every point they diverge &mdash; each one a decision the spec left to chance</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Design</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Agent</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><code>artist</code></td><td>Renders HTML mockup design docs from a content brief &mdash; the caller decides what and where, this decides how it looks</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Helpers</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Agent</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><code>researcher</code></td><td>Deep investigation for open-ended how and why questions spanning multiple files or systems</td></tr>
+            <tr><td><code>troubleshooter</code></td><td>Root-cause diagnosis for bugs, flakes, and crashes &mdash; returns a hypothesis with evidence, not a fix</td></tr>
+            <tr><td><code>doc-finder</code></td><td>Locates the documentation for one API, option, or concept and returns a pointer plus the minimum excerpt</td></tr>
+            <tr><td><code>test-runner</code></td><td>Runs the suites and returns pass/fail without dumping the output into the main context</td></tr>
+            <tr><td><code>log-sifter</code></td><td>Extracts the relevant slice from a long log &mdash; errors, one request, a time window</td></tr>
+            <tr><td><code>security-auditor</code></td><td>Audits an existing diff, PR, or module against OWASP and authz correctness, ranked by severity</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Vocabulary</h2>
+
+      <p>The rituals share a small set of terms. They are worth reading once, because the skills use them precisely.</p>
+
+      <h3>Spec</h3>
+      <p>The what and why of a change, and the artifact everything downstream is checked against. A spec walks <code>draft &rarr; ready &rarr; planned &rarr; complete</code>. Once <code>ready</code> it is <strong>frozen</strong>: no more edits. If planning or implementation surfaces something that would change its objectives, acceptance criteria, or non-goals, you do not edit it &mdash; you re-enter brainstorming and produce a new spec that links back. Task-level uncertainty (which library, how to name a module) is resolved inline in planning instead; the bounce-back rule is for shifts in what and why, not how.</p>
+
+      <h3>ADR</h3>
+      <p>An architecture decision record: context, decision, consequences, alternatives rejected, kept to roughly one screenful on the theory that a decision that does not fit a screen is usually two decisions. An ADR walks <code>draft &rarr; active</code>, and from <code>active</code> to <code>superseded</code> or <code>dropped</code>. <strong>Once <code>active</code> it is immutable</strong> &mdash; changing your mind creates a new, superseding ADR rather than an edit. The one exception is the supersession metadata itself, written in both directions so a reader landing on the old record finds the new one.</p>
+
+      <h3>Plan and slice</h3>
+      <p>A plan is not a document. It is a graph of task records: one parent that acts as the container and lifecycle handle, and one child per slice, wired with containment edges and ordered with dependency edges. A slice is a vertical cut that can be built, tested, and committed independently, and it carries a test contract. The graph is not frozen at plan time &mdash; a slice that turns out too large is split, new work is appended, and the graph stays the single source of truth for what is left. The parent is never dispatched as a unit of work.</p>
+
+      <h3>Standalone task vs plan slice</h3>
+      <p>A <strong>standalone task</strong> has no parent and no children: it is the whole unit of work. A <strong>plan slice</strong> is a child of a parent plan. The distinction is determined mechanically from the record graph, never by reading the prose, because the two have opposite handling &mdash; a standalone task is refined and then executed as its own single slice, while a slice found on its own means the run was rooted in the wrong place and should be re-rooted at its parent.</p>
+
+      <h3>Delivers / Test contract / Files</h3>
+      <p>The payload that makes a task executable. <strong>Delivers</strong> is what is complete and testable when the task is done. <strong>Test contract</strong> is the behaviors the failing tests must verify before any implementation code exists. <strong>Files</strong> is what gets created or modified. A task without this payload is not ready; producing it is exactly what refine does, and every derived answer in it must cite the code it came from.</p>
+
+      <h3>The gauntlet</h3>
+      <p>The adversarial review a draft record survives before it freezes. Eight parallel passes for a spec, seven for an ADR. The main session adjudicates &mdash; never a subagent &mdash; and a human dispositions every Critical. A Critical dispositioned as a reframe sends the spec to <code>superseded</code> instead of <code>ready</code>: the framing did not survive, which is the review working rather than the spec failing.</p>
+
+      <h3>The council</h3>
+      <p>The four-lens panel &mdash; builder, breaker, attacker, advocate &mdash; dispatched as four parallel calls in isolated contexts. Members do not see each other&rsquo;s responses, each is capped at two Critical findings to force prioritization, and the synthesis is always done by the main session. Membership is single-sourced, so the planning skill&rsquo;s council step, the gauntlet&rsquo;s lens pass, and <code>/craft:consult</code> all convene the same panel.</p>
+
+      <h3>Forward path vs backward distillation</h3>
+      <p>Two directions produce ADRs. On the <strong>forward path</strong>, brainstorm&rsquo;s altitude check recognizes that an idea is really a design decision, writes a draft ADR, and the gauntlet reviews and flips it <code>active</code> before the work starts. In <strong>backward distillation</strong>, distill reads work that already landed and condenses it into ADRs after the fact. A distilled ADR never goes through the gauntlet &mdash; the distill disposition owns its flip.</p>
+
+      <h3>Status tokens</h3>
+      <p>Subagents in the execute loop return a fixed vocabulary rather than prose, so the controller can branch on it:</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Token</th><th>Meaning and handling</th></tr></thead>
+          <tbody>
+            <tr><td><code>DONE</code></td><td>The slice is built and committed. Proceed to the conformance gate.</td></tr>
+            <tr><td><code>DONE_WITH_CONCERNS</code></td><td>Built, but with caveats. Correctness or scope concerns are addressed before review; observations are noted and the loop continues.</td></tr>
+            <tr><td><code>NEEDS_CONTEXT</code></td><td>The prompt was insufficient. Supply what was missing and re-dispatch at the same tier &mdash; this is not a model-capability problem.</td></tr>
+            <tr><td><code>BLOCKED</code></td><td>The work could not proceed. Diagnose the cause &mdash; missing context, insufficient reasoning capacity, a slice that is too large, or a wrong plan &mdash; before re-dispatching. Re-running the same prompt hoping for a different result is explicitly called out as a red flag.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The <code>assumption-prover</code> returns <code>VALIDATED</code> or <code>INVALIDATED</code> alongside the same two escape tokens. An invalidated assumption stops the build &mdash; the design may need to change, and building on top of it is the specific failure the prover exists to prevent.</p>
+
+      <h2>Where craft keeps its records</h2>
+
+      <p>Specs, plans, tasks, and ADRs are records, and craft persists them through a seam called <code>note_store</code> rather than writing files itself. The brainstorm, plan, and polish skills and the <code>planner</code> agent all go through it, and the contract is documented in one shared reference the skills read at runtime.</p>
+
+      <p><strong><code>lore</code> is the only implemented provider.</strong> Records are created and updated through the <code>lore</code> CLI, which is why craft &mdash; alone among the plugins &mdash; has a dependency: it needs lore for storage. Alternative providers behind the same contract, and per-repo configuration to elect between them, are deferred. There is no second provider to fall back to today, and the seam says so out loud rather than pretending otherwise. If the <code>lore</code> CLI is absent entirely, the planner falls back to a documented manual-write path.</p>
+
+      <div class="note">
+        <p><strong>craft is never a dependency of the other plugins</strong> &mdash; nothing in lore, camp, portage, ranger, or outpost requires it, and you can run any of them without it. The dependency runs the other way: craft needs lore to store what it produces.</p>
+      </div>
+
+      <h2>The pre-commit leak gate</h2>
+
+      <p>craft ships a small, generic guard for a specific problem: working in a private repo and a public one at the same time, and accidentally committing a private string &mdash; an internal service name, a customer identifier, an unreleased product codename &mdash; into the repo that ships publicly.</p>
+
+      <p>The gate is denylist-driven and <strong>ships zero private strings itself</strong>. Every forbidden token lives in a machine-local denylist file that is never tracked in any repository, one regex per line, matched case-insensitively. <code>scripts/install-hooks.sh</code> installs the gate as a pre-commit hook; the installer is idempotent and chain-safe, so an existing pre-commit hook is preserved and runs first, and because <code>.git/hooks/</code> is never committed, the absolute paths baked into the generated hook stay on your machine.</p>
+
+      <p><strong>It is fail-closed.</strong> A missing, unreadable, or pattern-empty denylist makes the gate exit <code>2</code> &mdash; an error, not a pass. It exits <code>0</code> only when it actually certified the tree clean, <code>1</code> when it found a leak (printing <code>relpath:lineno:token</code> for each hit), and never <code>0</code> when it could not check. A gate that silently passes when its configuration is missing is worse than no gate, because you would trust it.</p>
+
+      <h2>Scope and honest limits</h2>
+
+      <div class="note">
+        <p><strong>There is no CLI, and no vanilla usage.</strong> craft only exists inside an agent harness. If you want to use the process without an agent, there is nothing here for you &mdash; the skills are instructions written for a model, and the subagents are dispatched by one.</p>
+        <p><strong>Claude Code is the only harness implemented.</strong> The subagent dispatch and skill-invocation model craft depends on is wired through Trailhead&rsquo;s harness seam, but Claude Code is what ships today.</p>
+        <p><strong>lore is a hard dependency.</strong> Specs, plans, tasks, and ADRs need a note store, and lore is the only provider that exists. Alternative providers and per-repo provider configuration are deferred.</p>
+        <p><strong>The rituals are not cheap.</strong> Eight parallel gauntlet passes, a four-lens council review, per-slice conformance gates, and a whole-change pipeline all cost tokens and wall-clock time. Every skill carries an explicit skip gate for exactly this reason: a change with two slices, no unknowns, and a hundred lines of scope should just be built, and the skills say so.</p>
+        <p><strong>Several review disciplines are enforced by prompt, not by machinery.</strong> The gauntlet halts on a missing pass agent and the simplifier&rsquo;s write scope is checked mechanically, but the bulk of craft&rsquo;s discipline is instructions an agent chooses to follow. It works because the instructions are specific and the checks are staged &mdash; not because anything stops a model that decides to skip a step.</p>
+      </div>
+
+      <div class="pager"><a class="prev" href="camp.html"><span class="dir">Previous</span> &larr; camp</a><a class="next" href="portage.html"><span class="dir">Next</span> portage &rarr;</a></div>
+    </main>
+  </div>
+
+  <footer class="docs-foot">
+    <div class="wrap footer-row">
+      <span class="fine">Apache-2.0 &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
+      <span class="links">
+        <a href="../index.html">Home</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>

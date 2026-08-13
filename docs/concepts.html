@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trailhead concepts</title>
+  <meta name="description" content="The vocabulary the Trailhead plugins share - groups, workspaces, vaults, records, specs, slices, and the harness seam." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="wordmark" href="../index.html"><span class="blaze-mark"></span> trailhead</a>
+      <nav>
+        <a href="index.html" class="current">Docs</a>
+        <a href="../index.html#tools">Tools</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="docs-shell">
+    <aside class="docs-nav">
+      <h4>Getting started</h4>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="quickstart.html">Quickstart</a></li>
+        <li><a href="concepts.html" class="current">Concepts</a></li>
+      </ul>
+      <h4>Plugins</h4>
+      <ul>
+        <li><a href="lore.html">lore &mdash; memory</a></li>
+        <li><a href="camp.html">camp &mdash; workspaces</a></li>
+        <li><a href="craft.html">craft &mdash; process</a></li>
+        <li><a href="portage.html">portage &mdash; shipping</a></li>
+        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
+        <li><a href="outpost.html">outpost &mdash; review</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-main">
+      <p class="eyebrow">Getting started</p>
+      <h1>Concepts</h1>
+      <p class="lede">Trailhead's plugins share a small vocabulary. Learning these terms once makes every plugin page read easily, and makes it obvious why the tools fit together the way they do.</p>
+
+      <h2>The group</h2>
+      <p>A <strong>group</strong> is a named set of repositories that are worked on together &mdash; a backend, a web client, a mobile app, and the infrastructure that runs them. It is the single organizing idea underneath the whole suite:</p>
+      <ul>
+        <li>Memory is scoped to the group, so a decision made in one repository is available in every sibling it touches.</li>
+        <li>A workspace spans the group, so one change can cut across every repository at once.</li>
+        <li>A release ships the group, so the pull requests for a change merge together rather than drifting apart.</li>
+      </ul>
+      <p>Each repository belongs to <strong>exactly one</strong> group &mdash; overlap is not allowed, and the rule is enforced rather than merely advised. A <strong>member</strong> is one repository's entry in the group, carrying its path and its provisioning steps. If you work in a single repository, a group of one is perfectly reasonable; the design simply assumes most real products are not.</p>
+
+      <div class="note">
+        Group definitions live in <code>~/.config/camp/groups/&lt;name&gt;.toml</code> and are plain, hand-editable TOML. They are the one piece of configuration worth understanding properly, because <code>camp</code>, <code>portage</code>, and <code>ranger</code> all read from them.
+      </div>
+
+      <h2>Workspaces and worktrees</h2>
+      <p>A <strong>workspace</strong> is one unit of work across the whole group. Creating one cuts a git <strong>worktree</strong> in every member repository, all on a matching branch, then runs each member's provisioning steps so the thing is ready to work in.</p>
+      <p>A workspace is addressed by its <strong>slug</strong> &mdash; a short name you choose, like <code>add-billing</code>. The slug feeds the <strong>branch pattern</strong> configured for the group (commonly something like <code>worktree-{slug}</code>), which is how every member ends up on a consistently named branch.</p>
+      <p>Because worktrees are separate directories, workspaces are isolated from one another. You can have several changes open at once without them colliding, and tearing one down does not disturb the others. <strong>Drift</strong> is the term for a workspace whose branches have fallen behind their upstreams.</p>
+
+      <h2>The vault and its records</h2>
+      <p>A <strong>vault</strong> is a git repository full of markdown files &mdash; this is where memory lives. Each file is a <strong>record</strong>: a typed, structured note with frontmatter that the agent can search, filter, and link.</p>
+      <p>There is a closed set of <strong>nine record kinds</strong>. The set is deliberately fixed; a small taxonomy the agent knows completely is worth more than an open-ended one it has to interpret.</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Kind</th><th>What it records</th></tr></thead>
+          <tbody>
+            <tr><td><code>decision</code></td><td>A choice that was made, and why &mdash; the lightweight, in-flight capture</td></tr>
+            <tr><td><code>adr</code></td><td>An architecture decision record: a considered, durable design decision</td></tr>
+            <tr><td><code>lesson</code></td><td>Something learned the hard way, including dead-ends worth not repeating</td></tr>
+            <tr><td><code>task</code></td><td>A unit of work &mdash; open, ready, blocked, or done</td></tr>
+            <tr><td><code>area</code></td><td>A profile of one area of the codebase: what it is, how it behaves, its gotchas</td></tr>
+            <tr><td><code>spec</code></td><td>What a change is meant to achieve, before it is planned</td></tr>
+            <tr><td><code>collaboration</code></td><td>Working agreements and context about the people involved</td></tr>
+            <tr><td><code>blob</code></td><td>Unstructured material that does not fit another kind</td></tr>
+            <tr><td><code>session</code></td><td>The running log of one working session</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Each kind carries its own <strong>status vocabulary</strong> &mdash; a task moves through <code>open</code>, <code>ready</code>, <code>blocked</code>, and <code>done</code>, while an ADR moves through <code>draft</code>, <code>active</code>, and <code>superseded</code>. Records link to each other with <code>[[wikilinks]]</code>.</p>
+
+      <h3>Layered vaults</h3>
+      <p>You have more than one vault, and they are searched together. A personal <code>default</code> vault follows you across everything you build; additional vaults are scoped, so knowledge that belongs to a product or a team lives above any single repository. Records route to a vault by scope &mdash; <code>repo</code>, <code>product</code>, <code>suite</code>, or <code>team</code> &mdash; and anything without a matching scope binding lands in <code>default</code>.</p>
+      <p>The practical effect: a dead-end you hit on a personal project is there to warn you at work, while a decision your team made stays in the team's vault rather than being trapped in one checkout.</p>
+
+      <h3>Areas and the area map</h3>
+      <p>An <strong>area profile</strong> is the agent's mental model of one part of the codebase. The <strong>area map</strong> is the compact list of those profiles, which the agent scans to decide what is worth pulling into context. It is the mechanism that keeps recall proportional: the agent reads a short menu, not the whole vault.</p>
+
+      <h3>Sessions, candidates, and the flush</h3>
+      <p>While working, the agent captures findings as <strong>candidates</strong> on the current <strong>session</strong> record &mdash; cheap, liberal, judgment-deferred. Capturing is meant to be almost free, so nothing is lost to hesitation.</p>
+      <p>At the end (or any time you like), a <strong>flush</strong> reviews the outstanding candidates, promotes the ones that deserve to last into durable records, and marks the session clean. A <strong>watermark</strong> tracks what has already been flushed, so a second flush only considers what is new.</p>
+
+      <div class="note">
+        Recall is <strong>pull-based</strong>: the agent searches the vault when it decides it needs to. Nothing automatically injects memory into your conversation.
+      </div>
+
+      <h2>Specs, plans, slices, and tasks</h2>
+      <p>This vocabulary belongs to <code>craft</code>, which runs the arc of a change.</p>
+      <ul>
+        <li>A <strong>spec</strong> states the problem, the objectives, the acceptance criteria, and the non-goals. It starts as a draft and <strong>freezes</strong> once it has survived review &mdash; after that, new thinking means a new spec rather than a quiet edit.</li>
+        <li>The <strong>gauntlet</strong> is that review: parallel adversarial passes that attack a draft spec from independent angles before it freezes.</li>
+        <li>The <strong>council</strong> is a panel of four lenses &mdash; builder, breaker, attacker, advocate &mdash; convened on a hard decision and then synthesized.</li>
+        <li>A <strong>plan</strong> turns a frozen spec into ordered <strong>slices</strong>. Each slice is independently committable and gets built and checked on its own.</li>
+        <li>A <strong>standalone task</strong> is a leaf with no parent plan and no child slices &mdash; a single self-contained piece of work. <strong>Refining</strong> one promotes it from <code>open</code> to <code>ready</code> by filling in what it delivers, how it will be tested, and which files it touches.</li>
+        <li>An <strong>ADR</strong> records a design decision durably. Once active it is treated as immutable &mdash; changing your mind means writing a new ADR that supersedes it.</li>
+      </ul>
+
+      <h2>Harnesses, plugins, skills, and subagents</h2>
+      <p>A <strong>harness</strong> is the agent application you drive &mdash; Claude Code today. Trailhead never speaks to a harness directly from its shared code; everything goes through the <strong>harness seam</strong>, one interface that harness-specific code implements. Adding a new harness means writing that one implementation, with no changes to the shared install path.</p>
+      <p>A <strong>plugin</strong> is one of the six tools. What a plugin actually gives your agent comes in two forms:</p>
+      <ul>
+        <li>A <strong>skill</strong> is a procedure the agent follows &mdash; invoked by name, like <code>/craft:plan</code>, or triggered when the situation matches.</li>
+        <li>A <strong>subagent</strong> is a specialist dispatched into its own fresh context to do one job and report back a conclusion. This is what keeps bulky work &mdash; reading logs, diffs, wide searches &mdash; from filling up the main conversation.</li>
+      </ul>
+      <p>You can install plugins individually, and within a plugin you can install individual skills and subagents. Everything you wire in costs context on every turn, so narrow installs are a genuine optimization.</p>
+
+      <h2>How the plugins reference each other</h2>
+      <p>The plugins are separable, but they do know about each other in specific, documented ways:</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Dependency</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td><code>craft</code> &rarr; <code>lore</code></td><td>craft stores specs, plans, tasks, and ADRs through a note store; lore is the only implemented provider</td></tr>
+            <tr><td><code>portage</code> &rarr; <code>camp</code></td><td>portage reads the repository set and release settings from the camp group definition</td></tr>
+            <tr><td><code>ranger</code> &rarr; <code>craft</code>, <code>camp</code>, <code>lore</code></td><td>ranger drives craft's rituals over a vault's task queue, one ephemeral camp workspace per task</td></tr>
+            <tr><td><code>ranger</code> &rarr; <code>portage</code></td><td>Optional. Without it, ranger runs in a degraded mode with no pull-request tail</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>craft</code> is never a dependency of the others, and <code>lore</code> and <code>camp</code> stand alone. The arrows only ever point toward the simpler tools.</p>
+
+      <h2>Paths</h2>
+      <p>Trailhead follows the freedesktop base directory specification on every platform, macOS included &mdash; configuration under <code>~/.config</code>, state under <code>~/.local/state</code>, cache under <code>~/.cache</code>, with the <code>XDG_*</code> variables taking precedence when set. This is a deliberate departure from the macOS-native <code>~/Library/Application Support</code> layout, chosen so one mental model covers every machine you work on.</p>
+
+      <div class="pager">
+        <a class="prev" href="quickstart.html"><span class="dir">Previous</span> &larr; Quickstart</a>
+        <a class="next" href="lore.html"><span class="dir">Next</span> lore &rarr;</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="docs-foot">
+    <div class="wrap footer-row">
+      <span class="fine">Apache-2.0 &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
+      <span class="links">
+        <a href="../index.html">Home</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>

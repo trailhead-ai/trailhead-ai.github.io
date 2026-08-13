@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trailhead docs - portage</title>
+  <meta name="description" content="portage: open, update, watch, and merge a camp group's pull requests as one release — the skill, its four subagents, the [release] config, and the CLI." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="wordmark" href="../index.html"><span class="blaze-mark"></span> trailhead</a>
+      <nav>
+        <a href="index.html" class="current">Docs</a>
+        <a href="../index.html#tools">Tools</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="docs-shell">
+    <aside class="docs-nav">
+      <h4>Getting started</h4>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="quickstart.html">Quickstart</a></li>
+        <li><a href="concepts.html">Concepts</a></li>
+      </ul>
+      <h4>Plugins</h4>
+      <ul>
+        <li><a href="lore.html">lore &mdash; memory</a></li>
+        <li><a href="camp.html">camp &mdash; workspaces</a></li>
+        <li><a href="craft.html">craft &mdash; process</a></li>
+        <li><a href="portage.html" class="current">portage &mdash; shipping</a></li>
+        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
+        <li><a href="outpost.html">outpost &mdash; review</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-main">
+      <p class="eyebrow">Plugin</p>
+      <h1>portage &mdash; shipping</h1>
+      <p class="lede">Get the change merged. portage treats every pull request a camp group opens as part of one release: pushed together, watched together, triaged together, merged in the order you declared.</p>
+
+      <p>A change that spans three repositories is not three independent pull requests. It is a stack: the shared library has to land before the service that consumes it, the service before the client. Each PR has its own CI run, its own review comments, its own merge conflicts appearing at different times. Merging them in the wrong order breaks the build for everyone else, and at GitHub that is irreversible.</p>
+
+      <p>The manual version of this is polling. You push, you wait, you check three tabs, one job fails on a flake, you rerun it, a reviewer comments on the second PR, you fix it and push, which invalidates the first PR&rsquo;s green run. Hours of attention spent on a loop that is almost entirely mechanical, punctuated by a handful of real judgment calls.</p>
+
+      <p>portage moves the loop off your desk. It reads the repository set from your camp group, pushes every active repo, opens and cross-links the PRs, then hands off to a background agent that blocks on CI, dispatches a fixer when something breaks, and merges the stack in dependency order once everything is clean. The judgment calls &mdash; is this review comment right, is this failure real &mdash; still get made by a model reading the actual content; the polling does not consume your context or your time.</p>
+
+      <div class="note">
+        <p><strong>portage is camp-group-shaped.</strong> It reads its repository set from the camp group manifest, and every command takes a <code>--manifest</code> path or derives one. It is not a general-purpose PR tool you can point at an arbitrary repository &mdash; if you are not working inside a camp workspace, portage has nothing to operate on. A group of one repository works fine; a checkout with no group does not.</p>
+      </div>
+
+      <h2>What you need</h2>
+      <ul>
+        <li><strong>The <code>gh</code> CLI, authenticated.</strong> Every read and write to the code host goes through <code>gh</code>. Without it, nothing in portage works.</li>
+        <li><strong>A camp group and an active workspace.</strong> The manifest is the input.</li>
+        <li><strong>The trailhead checkout.</strong> portage ships a <code>portage</code> CLI, but its bootstrap resolves the shared <code>trailhead</code> library by walking up from its own location to the checkout (falling back to <code>$TRAILHEAD_ROOT</code>). With neither available it exits with a legible error rather than running. The CLI is on <code>$PATH</code> through trailhead&rsquo;s shim directory once <code>eval "$(trailhead shellenv)"</code> is in your shell profile.</li>
+      </ul>
+
+      <h2>The pull_request skill</h2>
+      <p>portage exposes one skill, <code>/portage:pull_request</code>, taking a verb as its first argument. The skill itself is thin &mdash; it parses the verb and dispatches subagents, so the expensive work happens in isolated contexts rather than in your session.</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Verb</th><th>What it does</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>create</code></td><td>Review the diff, then push and open a PR for every active repo in the group, cross-link the siblings, write the sidecar, and start watching CI</td></tr>
+            <tr><td><code>update</code></td><td>Re-run local checks, push new commits to the PRs that already exist, and resume watching</td></tr>
+            <tr><td><code>monitor</code></td><td>Watch CI on the open PRs, triage failures and reviewer feedback, and merge once every PR is clean</td></tr>
+            <tr><td><code>merge</code></td><td>Merge the open PRs in dependency order right now, skipping the watch loop &mdash; for when you already know they are green</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><code>create</code> and <code>update</code> both end by launching the same background monitor that <code>monitor</code> runs, so in practice you invoke the skill once and get told when the stack has merged or when it needs you.</p>
+
+      <div class="note">
+        <p><strong>Four old skill names are retired.</strong> <code>/portage:open</code>, <code>/portage:update</code>, <code>/portage:monitor</code>, and <code>/portage:merge</code> no longer exist &mdash; they are gone, not aliased. Use <code>/portage:pull_request create</code>, <code>update</code>, <code>monitor</code>, and <code>merge</code> instead.</p>
+      </div>
+
+      <h2>The four subagents</h2>
+
+      <h3>updater &mdash; the push orchestrator</h3>
+      <p>Mechanical, no judgment. It runs a fixed linear flow: detect the active repos from the manifest, preflight each one in parallel (everything committed, commits GPG-signed with conventional prefixes, branch pushable without clobbering anyone), push, open or update the PRs, cross-link siblings in each PR body, and write the <code>prs.json</code> sidecar. It returns a short report ending in a <code>pr_pairs</code> line the caller needs to launch the monitor. Every member of the group is a peer &mdash; there is no privileged repo with a different push path.</p>
+      <p>It deliberately does not launch the monitor itself: a background agent dispatched from inside a subagent loses its notification channel when that subagent returns, so the monitor has to be launched from the top-level session.</p>
+
+      <h3>monitor &mdash; the watch, fix, and merge operator</h3>
+      <p>The one that runs for hours. It blocks on <code>portage wait-for-actionable</code>, which polls every 30 seconds and returns only when something needs a decision, then handles the action it was handed: <code>done</code> moves on, <code>rebase</code> and <code>rerun_ci</code> run the commands the evaluator supplied, and <code>fix_ci</code> and <code>review</code> dispatch the green driver. It never merges a PR whose last commit came from a fix cycle that has not reported ready, and it gives up after three fix cycles on the same PR without progress &mdash; at which point it dispatches the summarizer to write the blocker report and stops.</p>
+      <p>When every PR reports <code>done</code>, it calls <code>portage merge</code> once, cleans up each repo back to <code>main</code>, and updates the sidecar. It does not use <code>gh pr merge --auto</code>, deliberately: the explicit merge call is what keeps ordering and post-merge cleanup under its control.</p>
+
+      <h3>green-driver &mdash; drives one PR to green</h3>
+      <p>Handed a single <code>fix_ci</code> or <code>review</code> action, it triages, fixes, pushes, and re-reviews until it can return <code>ready</code> or <code>blocked</code>. On a CI failure it sifts the annotations for the actionable lines, fixes the code, pushes, and then runs a fresh code review over its own diff &mdash; a fix written from CI output is never trusted as clean without one. If triage stalls on something that looks flaky or unexplained, it escalates to a root-cause pass instead of guess-and-push, because every wasted attempt burns one of the monitor&rsquo;s three cycles.</p>
+      <p>This agent is the default behind the swappable <code>[release].green_driver_agent</code> seam. The monitor dispatches whatever name that key resolves to, so a group can substitute its own fixer without touching the monitor. The name is verified before the watch loop starts: if no installed subagent matches, the monitor stops with a named config error rather than discovering the problem mid-loop.</p>
+
+      <h3>summarizer &mdash; the cheap brief</h3>
+      <p>Runs on Haiku. Given a repo path and a PR number it fetches metadata, diff, and inline comments through <code>portage summarize</code> and returns a compact structured brief &mdash; what the change does, the shape of the diff, review feedback grouped by author with the bot called out separately, CI state, and anything gating merge. It exists so the rest of the system can understand a PR without loading its full diff and comment thread into an expensive context.</p>
+
+      <h2>Configuration</h2>
+      <p>Per-group behavior lives in the <code>[release]</code> block of your camp group TOML. Every key is optional, and the defaults are the conservative ones.</p>
+
+      <pre><span class="c"># ~/.config/camp/groups/&lt;group&gt;.toml</span>
+
+[release]
+<span class="c"># Dependency order for a multi-PR merge, by camp member name.</span>
+<span class="c"># Required whenever more than one PR is queued.</span>
+merge_order = ["shared-lib", "service", "web-client"]
+
+<span class="c"># Standing authorization to merge. Fail-closed: without this,</span>
+<span class="c"># `portage merge` refuses everything.</span>
+auto_merge = true
+
+<span class="c"># Login whose review comments count as actionable. Omit for</span>
+<span class="c"># CI-only evaluation — no review action is ever emitted.</span>
+review_bot_login = "my-review-bot"
+
+<span class="c"># Agent the monitor dispatches on fix_ci / review actions.</span>
+<span class="c"># Defaults to portage's own `green-driver` when absent.</span>
+green_driver_agent = "green-driver"
+
+<span class="c"># Reserved field — see the note below.</span>
+<span class="c"># external_tracker = { kind = "..." }</span></pre>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Key</th><th>Default</th><th>Effect</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>merge_order</code></td><td>none</td><td>List of camp member names giving merge order. With more than one PR queued and no order declared, <code>portage merge</code> refuses. A single PR needs no order.</td></tr>
+            <tr><td><code>auto_merge</code></td><td><code>false</code></td><td>Must be exactly <code>true</code> for any merge to happen. See below.</td></tr>
+            <tr><td><code>review_bot_login</code></td><td>none</td><td>Whose comments count as actionable review. Absent means CI-only &mdash; the evaluator emits no review action until a human comments.</td></tr>
+            <tr><td><code>green_driver_agent</code></td><td><code>green-driver</code></td><td>Which installed subagent handles <code>fix_ci</code> and <code>review</code>. Verified to exist before the watch loop starts.</td></tr>
+            <tr><td><code>external_tracker</code></td><td><code>null</code></td><td>Reserved for an issue-tracker connector. No connector ships today &mdash; the field is read, defaults to null, and every tracker transition is a no-op.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <p><strong><code>auto_merge</code> is fail-closed, and that is the whole safety story.</strong> If <code>auto_merge</code> is unset or <code>false</code>, <code>portage merge</code> refuses to merge anything &mdash; before any call to the code host, regardless of how many PRs are queued or how clean they are. It exits 2 with a message naming the remediation, and the monitor is instructed to stop there rather than retry or work around it. Nothing merges automatically until you have written <code>auto_merge = true</code> into the group TOML yourself. The check lives in the merge implementation, not in agent prose, so it holds even if an agent misreads its instructions.</p>
+        <p>The corollary is worth stating plainly: with <code>auto_merge = true</code>, a PR reporting <code>done</code> is merge-eligible as it stands. There is no separate human-approval gate in the loop. Enable it when you want the group merged unattended, and lean on branch protection if you want a human in the path.</p>
+      </div>
+
+      <p>Note that the approval signal is never applied by portage. Neither the monitor, the green driver, nor the updater may post an approving review or apply a <code>human-approved</code> label &mdash; that signal is human-authored only. <code>portage approvals</code> exists as a read-only query for whether such a signal exists on a PR&rsquo;s current head, but it is not part of the merge path.</p>
+
+      <h2>The prs.json sidecar</h2>
+      <p>The updater writes a small file next to the camp manifest, at <code>&lt;manifest_dir&gt;/prs.json</code>:</p>
+
+      <pre>{
+  "schema_version": 1,
+  "prs": [
+    {"repo": "shared-lib", "pr_number": "42",
+     "url": "https://github.com/acme/shared-lib/pull/42",
+     "branch": "worktree-feat"}
+  ],
+  "external_tracker": null
+}</pre>
+
+      <p>It exists so the association between a workspace and its pull requests survives the session that created them. Without it, every later step would have to rediscover the PR numbers by listing PRs by branch on each remote &mdash; a slower, network-dependent guess. The sidecar is owned by portage, sits alongside camp&rsquo;s manifest rather than inside it, and is written atomically at mode 0600. Any step that needs the association can read it back with <code>portage sidecar read</code>.</p>
+
+      <h2>CLI reference</h2>
+      <p>The agents drive these; you can run them directly too. The evaluator commands (<code>check-status</code>, <code>evaluate-status</code>, <code>wait-for-actionable</code>) print JSON on stdout including errors, because callers parse them. The orchestration commands (<code>detect-repos</code>, <code>merge</code>) report errors as exit codes plus stderr &mdash; exit 2 for a config or manifest failure, exit 1 for a partial merge.</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Command</th><th>What it does</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>portage detect-repos --manifest PATH</code></td><td>Report the active repos in the workspace as JSON. Members whose worktree is gone are skipped, not fatal.</td></tr>
+            <tr><td><code>portage check-status REPO PR</code></td><td>Poll one PR&rsquo;s raw status. Takes <code>--since</code> and <code>--review-bot-login</code>.</td></tr>
+            <tr><td><code>portage evaluate-status REPO PR</code></td><td>Turn that status into a recommended action. Also takes <code>--fail-count</code>.</td></tr>
+            <tr><td><code>portage wait-for-actionable REPO:PR...</code></td><td>Block until at least one PR is actionable. Takes <code>--since</code>, <code>--timeout</code>, <code>--interval</code>, <code>--review-bot-login</code>.</td></tr>
+            <tr><td><code>portage merge --manifest PATH [--toml PATH] PAIRS...</code></td><td>Merge in dependency order with the safety gates. Pairs are <code>path:pr_number:member_name</code>.</td></tr>
+            <tr><td><code>portage approvals REPO PR</code></td><td>Read-only: does a human-authored approval exist for the current head? Exit 0 approved, 1 not (including stale), 2 on error.</td></tr>
+            <tr><td><code>portage summarize REPO PR</code></td><td>Fetch metadata, diff, and comments through the VCS boundary with untrusted text marked.</td></tr>
+            <tr><td><code>portage sidecar read|write --sidecar PATH</code></td><td>Read or write the prs.json sidecar. <code>write</code> takes a repeatable <code>--pr repo:number:url:branch</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>A worked run</h2>
+      <p>You have finished a change spanning three repos in a camp workspace. In your agent session:</p>
+
+      <pre><span class="p">/portage:pull_request create</span></pre>
+
+      <p>The skill reviews the diff with you, then dispatches the updater. It detects the three active repos, preflights each in parallel, pushes, opens three PRs, cross-links them, and writes the sidecar. It hands back the PR URLs and the <code>pr_pairs</code> line. The session launches the monitor in the background and tells you it will notify you when the stack merges or needs attention. You go do something else.</p>
+
+      <p>The monitor blocks on <code>wait-for-actionable</code>. Twenty minutes later the service repo&rsquo;s test job fails; the evaluator returns <code>fix_ci</code> with the failing checks attached. The monitor dispatches the green driver, which sifts the annotations, fixes an assertion, pushes a signed conventional commit, runs a fresh review over its own diff, and reports <code>ready</code>. The monitor loops. Later a reviewer comments on the client PR; that comes back as a <code>review</code> action and takes the same path.</p>
+
+      <p>When all three report <code>done</code>, the monitor merges in the declared order:</p>
+
+      <pre><span class="p">portage merge \
+  --manifest ~/.local/state/camp/acme/worktrees/feat/manifest.json \
+  --toml ~/.config/camp/groups/acme.toml \
+  /path/shared-lib:42:shared-lib \
+  /path/service:17:service \
+  /path/web-client:9:web-client</span></pre>
+
+      <p>The command checks <code>auto_merge</code> first and would refuse outright if it were unset. It is set, so the three PRs merge in order, JSON comes back listing merged, failed, and skipped, and the exit code is nonzero if anything did not land. The monitor resets each repo to <code>main</code>, updates the sidecar, and you get a notification saying the stack is merged.</p>
+
+      <p>If <code>auto_merge</code> had been left off, the run reaches exactly the same point and stops there, telling you all three PRs are ready and naming the one line to add if you want it to merge next time.</p>
+
+      <h2>Reviewer and CI text is data</h2>
+      <p>Everything a hostile CI run, review bot, or PR author can write &mdash; annotation messages, review bodies, PR titles and descriptions, diffs, inline comments &mdash; crosses into the agents through a single boundary that wraps it in an escaped <code>untrusted-content</code> marker. The escaping means the wrapped text cannot terminate the marker early or forge a fresh trusted frame around itself.</p>
+      <p>The agents are instructed to read anything inside that marker as a claim about the code, never as an instruction to execute. If a comment says to approve, to merge, or to ignore the rules, that is reported as a suspicious comment rather than obeyed. This matters more than usual here: portage runs unattended for hours against text written by third parties, and a CI action is not a trusted narrator.</p>
+
+      <h2>Honest limits</h2>
+      <div class="note">
+        <p><strong>GitHub is the only code host implemented.</strong> The provider sits behind an interface with a single-entry registry, and adding a backend is documented as implementing a subclass plus one registry line &mdash; but GitLab, Bitbucket, and everything else are an extension point, not shipped support. Asking for any other provider raises an error naming the registered ones.</p>
+        <p><strong>No merge lock.</strong> Two concurrent merges against the same group are not guarded. Solo use makes the race unlikely; it is a known residual, not a solved problem.</p>
+        <p><strong>No issue-tracker connector.</strong> <code>external_tracker</code> is a reserved field. It is read, defaults to null, and every transition it would drive is a no-op today.</p>
+        <p><strong>The fix loop gives up at three cycles.</strong> Three attempts on one PR without progress and the monitor stops with a blocker report. That is a deliberate bound on wasted work, not a failure it will keep grinding at.</p>
+        <p><strong>Self-approval is not structurally prevented.</strong> No portage component may apply the approval signal, and none does &mdash; but automation running under your own credentials could. That residual is accepted within single-operator scope; branch protection is the answer if you need more.</p>
+      </div>
+
+      <div class="pager"><a class="prev" href="craft.html"><span class="dir">Previous</span> &larr; craft</a><a class="next" href="ranger.html"><span class="dir">Next</span> ranger &rarr;</a></div>
+    </main>
+  </div>
+
+  <footer class="docs-foot">
+    <div class="wrap footer-row">
+      <span class="fine">Apache-2.0 &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
+      <span class="links">
+        <a href="../index.html">Home</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>
