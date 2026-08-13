@@ -1,0 +1,44 @@
+name: site checks
+
+# Guards the public site's structural and naming invariants.
+#
+# This replaces the pre-launch "naming-invariants" workflow, which enforced a
+# "coming soon" page: exactly 3 visible tool cards, no visible "portage", and
+# no visible install command. All three of those are now the intended state,
+# so what remains are the checks that still hold after launch:
+#
+#   - every internal link and #fragment resolves (the site is multi-page now)
+#   - every CSS class used in HTML is defined in assets/site.css
+#   - retired tool names ("forge", "landing") never return AS TOOL NAMES --
+#     both are also ordinary English verbs, so the check looks only where this
+#     site writes names (inside <code> and headings), not at bare prose
+#   - the landing page shows all six shipped tools
+#   - tags balance and every page has a <title>
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: site checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run site checks
+        run: python3 scripts/check_site.py .
