@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Installing Trailhead</title>
+  <meta name="description" content="Requirements, the clone-and-run install, PATH setup, choosing what to install, upgrading, uninstalling, and the trailhead command reference." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="wordmark" href="../index.html"><span class="blaze-mark"></span> trailhead</a>
+      <nav>
+        <a href="index.html" class="current">Docs</a>
+        <a href="../index.html#tools">Tools</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="docs-shell">
+    <aside class="docs-nav">
+      <h4>Getting started</h4>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="install.html" class="current">Install</a></li>
+        <li><a href="quickstart.html">Quickstart</a></li>
+        <li><a href="concepts.html">Concepts</a></li>
+      </ul>
+      <h4>Plugins</h4>
+      <ul>
+        <li><a href="lore.html">lore &mdash; memory</a></li>
+        <li><a href="camp.html">camp &mdash; workspaces</a></li>
+        <li><a href="craft.html">craft &mdash; process</a></li>
+        <li><a href="portage.html">portage &mdash; shipping</a></li>
+        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
+        <li><a href="outpost.html">outpost &mdash; review</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-main">
+      <p class="eyebrow">Getting started</p>
+      <h1>Installing Trailhead</h1>
+      <p class="lede">Trailhead installs by cloning the repository and running one command. There is no package to download, no remote fetch, and no <code>pip install</code> step &mdash; the checkout is the source.</p>
+
+      <h2>Requirements</h2>
+      <ul>
+        <li><strong>Python 3.11 or newer.</strong> Trailhead has zero third-party runtime dependencies &mdash; the standard library is all it needs. Your system <code>python3</code> may well be older than 3.11; check with <code>python3 --version</code> before you start.</li>
+        <li><strong>git.</strong> Used for the checkout and for the memory vault, which is itself a git repository.</li>
+        <li><strong>A supported shell</strong> &mdash; <code>bash</code>, <code>zsh</code>, or <code>fish</code>.</li>
+        <li><strong>An agent harness.</strong> Claude Code is the harness that ships today. Trailhead detects it by the presence of a <code>~/.claude</code> directory.</li>
+        <li><strong>The GitHub CLI</strong> (<code>gh</code>), authenticated &mdash; only needed if you want <code>portage</code> or <code>ranger</code> to open, watch, and merge pull requests.</li>
+      </ul>
+
+      <h2>Install</h2>
+      <p>Clone the repository somewhere permanent and run the installer. Where you put the checkout matters a little: it stays on disk and remains the source of everything trailhead installs, so pick a location you are not going to clear out.</p>
+
+<pre><span class="p">$ git clone https://github.com/trailhead-ai/trailhead.git</span>
+<span class="p">$ cd trailhead</span>
+<span class="p">$ ./bin/trailhead install</span></pre>
+
+      <p>With no flags, <code>install</code> auto-detects your harness, installs all six agent-plugins, and builds command-line shims for the plugins that ship a CLI. It prints a summary of what it did and what you still need to do.</p>
+
+      <p>Here is what happens under the covers, in order:</p>
+      <ol>
+        <li><strong>Detect harnesses</strong> on the machine.</li>
+        <li><strong>Resolve the effective config</strong> &mdash; the config file (default <code>config/default.toml</code>) merged with any command-line overrides, producing the set of harnesses, plugins, and individual subagents and skills to install.</li>
+        <li><strong>Compose and wire each harness</strong> under a lock: build the selected plugin trees, then register them with the harness.</li>
+        <li><strong>Build the CLI shim directory</strong> &mdash; one small wrapper per CLI-bearing plugin, each pointing back at your checkout.</li>
+        <li><strong>Bootstrap lore</strong> &mdash; create the default vault as a git repository, seed its config, and install the vault write guardrail. This step is idempotent, and if it fails the whole install fails rather than leaving you half-configured.</li>
+        <li><strong>Print the summary.</strong></li>
+      </ol>
+
+      <div class="note">
+        <strong>Trailhead does not edit your shell profile.</strong> It is brew-style: the installer tells you the line to add, and you add it. The next section is not optional &mdash; without it, none of the plugin CLIs will resolve.
+      </div>
+
+      <h2>Put the CLIs on your PATH</h2>
+      <p>Add this line to your shell profile, using the absolute path to the checkout you just cloned:</p>
+
+<pre><span class="p">eval "$(/absolute/path/to/trailhead/bin/trailhead shellenv)"</span></pre>
+
+      <p>Then restart your shell, or re-evaluate the line in the current one. <code>shellenv</code> detects your shell from <code>$SHELL</code>; pass <code>--shell fish</code>, <code>--shell zsh</code>, or <code>--shell bash</code> to override it. For fish, the profile is usually <code>~/.config/fish/config.fish</code>; for zsh, <code>~/.zshrc</code>; for bash, <code>~/.bashrc</code>.</p>
+
+      <p>What that one line sets up:</p>
+      <ul>
+        <li><code>TRAILHEAD_ROOT</code>, pointing at your checkout.</li>
+        <li>The shim directory on your <code>PATH</code>, so <code>lore</code>, <code>camp</code>, <code>portage</code>, and <code>ranger</code> resolve.</li>
+        <li>A <code>trailhead</code> shell function that re-resolves itself from the profile line at every shell startup. This is why moving or re-cloning the checkout only requires editing that one line &mdash; you do not need to re-run the installer.</li>
+        <li>A <code>camp</code> wrapper function. Camp never moves your shell by itself, so this wrapper is what lets <code>camp new</code> and <code>camp remove</code> actually change your working directory. Without it those commands still do their work and print the path, they just leave you where you were &mdash; and <code>camp resume</code> refuses outright rather than printing a line that would do nothing.</li>
+      </ul>
+
+      <p>Finally, start a fresh agent session so the harness picks up the newly installed plugins. An already-running session will not see them.</p>
+
+      <h2>Verify</h2>
+      <p><code>trailhead doctor</code> prints a read-only report of what is installed. It never changes anything and never gates &mdash; it always exits 0 unless the report itself crashes, so treat it as information, not as a pass/fail check.</p>
+
+<pre><span class="p">$ trailhead doctor</span>
+trailhead doctor (read-only report):
+
+  claude_code:
+    marketplace: trailhead (registered)
+    installed: camp, craft, lore, outpost, portage, ranger
+
+  CLIs on PATH:
+    lore: /Users/you/.local/state/trailhead/bin/lore
+    camp: /Users/you/.local/state/trailhead/bin/camp
+    portage: /Users/you/.local/state/trailhead/bin/portage
+    ranger: /Users/you/.local/state/trailhead/bin/ranger
+    trailhead: /Users/you/.local/state/trailhead/bin/trailhead
+  shim dir: /Users/you/.local/state/trailhead/bin (present)
+  python3: Python 3.11.9</pre>
+
+      <p>Pass <code>--json</code> for a machine-readable version of the same report.</p>
+
+      <h2>Choosing what to install</h2>
+      <p>You do not have to take all six plugins. The most common starting point is memory alone:</p>
+
+<pre><span class="p">$ ./bin/trailhead install --plugin lore</span>
+<span class="c"># or a couple of them</span>
+<span class="p">$ ./bin/trailhead install --plugin lore --plugin camp --plugin craft</span></pre>
+
+      <p>The flags available on <code>install</code>:</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>--harness NAME</code></td><td>Target a harness explicitly instead of auto-detecting. Repeatable.</td></tr>
+            <tr><td><code>--plugin NAME</code></td><td>Install only these plugins. Repeatable. Replaces the configured set entirely.</td></tr>
+            <tr><td><code>--no-camp</code></td><td>Skip installing or updating the <code>camp</code> CLI on PATH.</td></tr>
+            <tr><td><code>--no-lore</code></td><td>Skip installing or updating the <code>lore</code> CLI on PATH.</td></tr>
+            <tr><td><code>--no-portage</code></td><td>Skip installing or updating the <code>portage</code> CLI on PATH.</td></tr>
+            <tr><td><code>--config PATH</code></td><td>Drive the install from a TOML config. Absolute, or relative to the repo's <code>config/</code> directory. Defaults to <code>config/default.toml</code>.</td></tr>
+            <tr><td><code>--quiet</code></td><td>Suppress progress lines. The summary is still printed.</td></tr>
+            <tr><td><code>--json</code></td><td>Emit a machine-readable summary.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Command-line flags are runtime overrides of the config file: <code>--plugin</code> replaces the resolved plugin set, and <code>--harness</code> overrides detection.</p>
+
+      <h3>Config files, for finer control</h3>
+      <p>To go further than the flags allow &mdash; picking individual subagents and skills, targeting several harnesses differently, or pointing a skill at your own file &mdash; write a config. Drop <code>*.toml</code> files in the repo's <code>config/</code> directory; everything there except <code>default.toml</code> is gitignored, so your own configs never show up as changes in the checkout.</p>
+
+<pre><span class="c"># config/minimal.toml</span>
+install_camp_cli = true
+install_lore_cli = true
+install_portage_cli = false
+install_ranger_cli = false
+
+<span class="c"># Default plugin set, applied to every detected or named harness.</span>
+plugins = ["lore", "camp", "craft"]
+
+[[harness]]
+name = "claude_code"
+
+    <span class="c"># Map form: pick specific subagents and skills.</span>
+    <span class="c"># Omit a key to mean "all of them".</span>
+    [[harness.plugins]]
+    name = "craft"
+    subagents = ["architect", "executor", "code-reviewer"]
+    skills = ["plan", "execute", "review"]</pre>
+
+<pre><span class="p">$ ./bin/trailhead install --config minimal.toml</span></pre>
+
+      <p>A plugin written as a bare string expands to all of its subagents and skills. Every skill and subagent you wire in costs context on every agent turn, so installing narrowly is a real optimization, not just tidiness.</p>
+
+      <div class="note">
+        If a config points a subagent or skill at a file outside the repository, the install summary names it explicitly. Content installed as trusted agent instructions is never wired in silently.
+      </div>
+
+      <h2>Where trailhead puts things</h2>
+      <p>Trailhead follows the freedesktop base directory specification on <strong>every</strong> platform, macOS included &mdash; it deliberately does not use <code>~/Library/Application Support</code>. The <code>XDG_*</code> environment variables override the defaults when set.</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Location</th><th>Contents</th></tr></thead>
+          <tbody>
+            <tr><td><code>~/.local/state/trailhead/composed/</code></td><td>The composed plugin trees per harness</td></tr>
+            <tr><td><code>~/.local/state/trailhead/bin/</code></td><td>The CLI shim directory added to your PATH</td></tr>
+            <tr><td><code>~/.local/state/lore/vaults/default/</code></td><td>Your default memory vault, a git repository</td></tr>
+            <tr><td><code>~/.local/state/lore/</code></td><td>The derived search index</td></tr>
+            <tr><td><code>~/.config/lore/config.json</code></td><td>The vault registry</td></tr>
+            <tr><td><code>~/.config/camp/groups/</code></td><td>Your group definitions, one TOML file each</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>On Windows these resolve under <code>%APPDATA%</code> and <code>%LOCALAPPDATA%</code> instead. Each application also honours its own override variable &mdash; <code>LORE_CONFIG_DIR</code>, <code>CAMP_STATE_DIR</code>, and so on &mdash; which is how the test suite avoids touching real data.</p>
+
+      <h2>Upgrading</h2>
+<pre><span class="p">$ cd /path/to/trailhead</span>
+<span class="p">$ git pull</span>
+<span class="p">$ ./bin/trailhead install</span></pre>
+
+      <p>There is no <code>trailhead update</code> command; pulling and re-running the installer is the upgrade path.</p>
+
+      <div class="note">
+        <strong>Upgrades are additive.</strong> Re-running <code>install</code> only ever adds. Removing a plugin from your config does not remove it from the install. To actually drop pieces, uninstall and re-install with a narrower config.
+      </div>
+
+      <h2>Uninstalling</h2>
+      <p><code>trailhead uninstall</code> is all-or-nothing: it removes every plugin from every harness, all the CLI shims, and the PATH integration. It prompts for confirmation on a terminal; <code>--yes</code> skips the prompt.</p>
+
+<pre><span class="p">$ trailhead uninstall</span></pre>
+
+      <p><strong>Your data survives.</strong> The lore vault, your camp groups, and each plugin's data directory are all left alone, so a later re-install picks up where you left off. Remove the shell profile line by hand afterwards if you are done for good.</p>
+
+      <h2>Command reference</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>trailhead install</code></td><td>Install plugins into your harness(es) and the plugin CLIs onto PATH</td></tr>
+            <tr><td><code>trailhead uninstall</code></td><td>Remove the entire install. Keeps your data. <code>--yes</code>, <code>--quiet</code>, <code>--json</code></td></tr>
+            <tr><td><code>trailhead doctor</code></td><td>Read-only report of what is installed. <code>--json</code></td></tr>
+            <tr><td><code>trailhead shellenv</code></td><td>Print the shell environment to evaluate. <code>--shell fish|zsh|bash</code></td></tr>
+            <tr><td><code>trailhead outpost &lt;verb&gt;</code></td><td>Manage the outpost daemon: <code>start</code>, <code>stop</code>, <code>status</code>, <code>restart</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Running <code>trailhead</code> with no arguments prints a grouped menu. Errors are reported as a clean <code>trailhead: &lt;message&gt;</code> on stderr with a non-zero exit, never as a Python traceback.</p>
+
+      <h2>Troubleshooting</h2>
+
+      <h3>The installer says it could not find a harness</h3>
+      <p>It still builds the CLI shims, warns you, and exits non-zero. Re-run with <code>--harness claude_code</code> to install the plugins explicitly. If you are on Claude Code, check that <code>~/.claude</code> exists.</p>
+
+      <h3><code>lore</code> or <code>camp</code> is not found after installing</h3>
+      <p>The <code>shellenv</code> line is missing from your profile, or you have not restarted your shell. Run <code>trailhead doctor</code> and look at the shim directory line.</p>
+
+      <h3><code>camp resume</code> refuses to run, or <code>camp new</code> does not move me into the workspace</h3>
+      <p>Both are the shell wrapper being absent. <code>camp new</code> and <code>camp remove</code> still complete their work and print the workspace path, but cannot change your directory; <code>camp resume</code> stops rather than printing an instruction that would silently do nothing. Add the <code>shellenv</code> line and restart your shell.</p>
+
+      <h3>The agent cannot see the new skills</h3>
+      <p>Plugins are loaded when a session starts. Quit the agent session and start a fresh one.</p>
+
+      <h3><code>doctor</code> warns that something shadows <code>trailhead</code></h3>
+      <p>A <code>pip</code>-installed <code>trailhead</code> console script earlier on your <code>PATH</code> can shadow the shellenv shell function, or be shadowed by it. The editable install is only a development convenience &mdash; nothing depends on it. If the two disagree, remove the pip install and rely on the shell function.</p>
+
+      <h3>Python is too old</h3>
+      <p><code>trailhead doctor</code> reports the <code>python3</code> it sees. If it is below 3.11, install a newer Python and make sure it comes first on your <code>PATH</code>.</p>
+
+      <div class="pager">
+        <a class="prev" href="index.html"><span class="dir">Previous</span> &larr; Overview</a>
+        <a class="next" href="quickstart.html"><span class="dir">Next</span> Quickstart &rarr;</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="docs-foot">
+    <div class="wrap footer-row">
+      <span class="fine">Apache-2.0 &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
+      <span class="links">
+        <a href="../index.html">Home</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>

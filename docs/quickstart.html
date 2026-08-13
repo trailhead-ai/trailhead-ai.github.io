@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trailhead quickstart</title>
+  <meta name="description" content="Your first hour with Trailhead: verify the install, capture your first memory, define a group, open a workspace, and run a change end to end." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="wordmark" href="../index.html"><span class="blaze-mark"></span> trailhead</a>
+      <nav>
+        <a href="index.html" class="current">Docs</a>
+        <a href="../index.html#tools">Tools</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="docs-shell">
+    <aside class="docs-nav">
+      <h4>Getting started</h4>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="quickstart.html" class="current">Quickstart</a></li>
+        <li><a href="concepts.html">Concepts</a></li>
+      </ul>
+      <h4>Plugins</h4>
+      <ul>
+        <li><a href="lore.html">lore &mdash; memory</a></li>
+        <li><a href="camp.html">camp &mdash; workspaces</a></li>
+        <li><a href="craft.html">craft &mdash; process</a></li>
+        <li><a href="portage.html">portage &mdash; shipping</a></li>
+        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
+        <li><a href="outpost.html">outpost &mdash; review</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-main">
+      <p class="eyebrow">Getting started</p>
+      <h1>Quickstart</h1>
+      <p class="lede">This walks through your first hour: confirming the install, capturing your first memory, defining a group, opening a workspace, and running a change through to a pull request. Adopt as much or as little of it as you like &mdash; the first two steps are worth doing on their own.</p>
+
+      <p>Before you start, work through the <a href="install.html">installation guide</a>, add the <code>shellenv</code> line to your shell profile, restart your shell, and start a fresh agent session.</p>
+
+      <h2>Step 1 &mdash; Confirm the install</h2>
+      <p>Two checks. First, that the plugins and CLIs are wired up:</p>
+
+<pre><span class="p">$ trailhead doctor</span></pre>
+
+      <p>You want to see your harness listed with the plugins you installed, and each CLI resolving to a path inside the shim directory. Then confirm the memory vault exists and is healthy:</p>
+
+<pre><span class="p">$ lore status</span>
+<span class="p">$ lore vault ls</span></pre>
+
+      <p>The installer creates a <code>default</code> vault as a git repository. If <code>lore vault ls</code> shows it, memory is ready to use.</p>
+
+      <h2>Step 2 &mdash; Capture your first memory</h2>
+      <p>This is the highest-value thing to adopt first, and it works no matter what else you install.</p>
+      <p>Memory is meant to be captured by the agent as you work, not typed up by you afterwards. In a session, when you settle something worth keeping &mdash; a decision, a gotcha, a dead-end &mdash; tell the agent to record it:</p>
+
+<pre><span class="c"># in your agent session</span>
+Record that we chose cursor-based pagination over offset because
+the offset query degrades past about 50k rows.</pre>
+
+      <p>The agent captures that against the current session as a <strong>candidate</strong>. Candidates are cheap and liberal by design &mdash; the judgment about what deserves to last happens later. At the end of the session, or whenever you like, promote them:</p>
+
+<pre><span class="c"># in your agent session</span>
+/lore:flush</pre>
+
+      <p>That reviews the outstanding candidates, writes the ones worth keeping as durable records, and marks the session clean. Now search them back:</p>
+
+<pre><span class="p">$ lore search 'pagination'</span>
+<span class="p">$ lore search 'kind:decision'</span>
+<span class="p">$ lore search 'kind:lesson and pagination'</span></pre>
+
+      <p>The query language is a small subset of KQL: bare words do full-text search, <code>field:value</code> filters, and you can combine terms with <code>and</code>, <code>or</code>, and <code>not</code>. Add <code>--limit</code> to widen the default of 20 results.</p>
+
+      <div class="note">
+        <strong>Write to the vault through the CLI, never by editing files.</strong> The installer wires in a guardrail that blocks direct edits to vault files, because hand-edited records break the index and the record contract. This is deliberate, not an obstacle to route around.
+      </div>
+
+      <p>That is the whole loop: capture liberally while working, flush at the end, search before deciding. If you stop here, you already have the thing most agent setups are missing.</p>
+
+      <h2>Step 3 &mdash; Define a group</h2>
+      <p>A <strong>group</strong> is the set of repositories you work on together. Author one with a member per repository:</p>
+
+<pre><span class="p">$ camp group myproduct \</span>
+<span class="p">    --member api=~/code/myproduct-api \</span>
+<span class="p">    --member web=~/code/myproduct-web \</span>
+<span class="p">    --member infra=~/code/myproduct-infra</span></pre>
+
+      <p>That writes <code>~/.config/camp/groups/myproduct.toml</code> and wires session hooks into each member repository. If you would rather start from a commented template and fill it in by hand:</p>
+
+<pre><span class="p">$ camp group myproduct --scaffold</span></pre>
+
+      <p>Then re-run with <code>--member</code> flags once you have edited it. Two things to know: each repository belongs to exactly one group, and authoring refuses to overwrite an existing config unless you pass <code>--force</code>.</p>
+
+      <div class="note">
+        Working in a single repository? A group of one is fine, and still gets you workspaces and scoped memory. You can add members later by editing the TOML.
+      </div>
+
+      <h2>Step 4 &mdash; Open a workspace</h2>
+      <p>A <strong>workspace</strong> cuts a git worktree in every member repository, all on a matching branch, and provisions each one. Create it with a slug describing the change:</p>
+
+<pre><span class="p">$ camp new add-billing</span></pre>
+
+      <p>Provisioning runs in the background. Check on it, and see the git state across every member at once:</p>
+
+<pre><span class="p">$ camp status</span>
+<span class="p">$ camp list</span></pre>
+
+      <p>Run a command in every member without visiting each directory:</p>
+
+<pre><span class="p">$ camp foreach git status --short</span></pre>
+
+      <p>When you are finished with the change, tear the whole thing down in one step:</p>
+
+<pre><span class="p">$ camp remove --name add-billing</span></pre>
+
+      <p>Workspaces are isolated, so you can keep several open at once and switch between them without them interfering.</p>
+
+      <h2>Step 5 &mdash; Run a change through craft</h2>
+      <p>Now start an agent session inside the workspace and let it run the arc of the change. The rituals are invoked as skills:</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>When</th><th>Invoke</th><th>What happens</th></tr></thead>
+          <tbody>
+            <tr><td>The idea is still fuzzy</td><td><code>/craft:brainstorm</code></td><td>The agent interrogates it into a draft spec &mdash; problem, objectives, acceptance criteria, non-goals</td></tr>
+            <tr><td>The spec is drafted</td><td><code>/craft:gauntlet</code></td><td>Parallel adversarial passes attack it before it freezes</td></tr>
+            <tr><td>The spec is frozen</td><td><code>/craft:plan</code></td><td>It becomes an ordered set of independently committable slices</td></tr>
+            <tr><td>The plan is approved</td><td><code>/craft:execute</code></td><td>Each slice is built test-first by a dispatched subagent, with a conformance gate behind it</td></tr>
+            <tr><td>The work is built</td><td><code>/craft:review</code></td><td>A reviewer with no memory of how it was built reads the whole change against its intent</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>You do not need all of it. For a small, well-understood change, skip to <code>/craft:execute</code>. For a genuinely hard decision, <code>/craft:consult</code> convenes four reviewers &mdash; architecture, reliability, security, and user experience &mdash; and synthesizes their answers.</p>
+
+      <p>The plan is a starting point, not a contract. When a slice turns up something the plan did not anticipate, that is expected: the agent proves shaky assumptions before building on them and comes back to you rather than guessing.</p>
+
+      <h2>Step 6 &mdash; Ship it</h2>
+      <p>If your change spans several repositories, it becomes several pull requests that need to merge in the right order. That is what portage is for:</p>
+
+<pre><span class="c"># in your agent session</span>
+/portage:pull_request create</pre>
+
+      <p>That pushes every active repository, opens linked pull requests, and starts watching CI. Then <code>/portage:pull_request monitor</code> watches the checks, triages failures and review comments, and reports when everything is clean.</p>
+
+      <div class="note">
+        <strong>Nothing merges unless you authorize it.</strong> Merging is fail-closed: without <code>auto_merge</code> set in your group's release configuration, portage refuses to merge anything at all. Turning it on is a deliberate act. See the <a href="portage.html">portage page</a> before you enable it.
+      </div>
+
+      <p>You will need the GitHub CLI (<code>gh</code>) authenticated, and GitHub is the only code host implemented today.</p>
+
+      <h2>What the daily loop looks like</h2>
+      <p>Once it is set up, a working day tends to go:</p>
+      <ol>
+        <li><strong>Open a workspace</strong> for the change &mdash; <code>camp new &lt;slug&gt;</code>.</li>
+        <li><strong>Start a session</strong> in it and let the agent search the vault for what you already know about the area.</li>
+        <li><strong>Work the change</strong>, with the agent capturing decisions and dead-ends as it goes.</li>
+        <li><strong>Flush the session</strong> so what you learned outlives it &mdash; <code>/lore:flush</code>.</li>
+        <li><strong>Ship</strong> when it is ready, then tear the workspace down.</li>
+      </ol>
+      <p>The compounding part is step 4. A vault that has been flushed consistently for a month is why the agent stops asking you the same questions.</p>
+
+      <h2>Where to go next</h2>
+      <div class="card-grid">
+        <a class="card" href="concepts.html">
+          <h3>Concepts</h3>
+          <p>The shared vocabulary in one place &mdash; groups, workspaces, records, specs, and slices.</p>
+        </a>
+        <a class="card" href="lore.html">
+          <h3>lore in depth</h3>
+          <p>Record kinds, scoped vaults, the query language, and how recall actually works.</p>
+        </a>
+        <a class="card" href="craft.html">
+          <h3>craft in depth</h3>
+          <p>Every ritual and all the specialist subagents behind them.</p>
+        </a>
+      </div>
+
+      <div class="pager">
+        <a class="prev" href="install.html"><span class="dir">Previous</span> &larr; Install</a>
+        <a class="next" href="concepts.html"><span class="dir">Next</span> Concepts &rarr;</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="docs-foot">
+    <div class="wrap footer-row">
+      <span class="fine">Apache-2.0 &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
+      <span class="links">
+        <a href="../index.html">Home</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>

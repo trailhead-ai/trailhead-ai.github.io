@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Trailhead - scaffolding for agent-native development</title>
-  <meta name="description" content="AI can write the code. It can't yet be an engineer. Trailhead is the scaffolding that closes the gap: memory, environment, and process for agent-native development. Open source, coming soon." />
+  <meta name="description" content="AI can write the code. It can't yet be an engineer. Trailhead is the scaffolding that closes the gap: memory, environment, process, and shipping for agent-native development. Open source, Apache-2.0." />
 
   <!-- Open Graph -->
   <meta property="og:title" content="Trailhead" />
@@ -14,251 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-  <style>
-    :root {
-      --paper: #f6f1e7;
-      --paper-2: #efe8da;
-      --ink: #201d18;
-      --ink-soft: #4a4338;
-      --pine: #2f4a3c;
-      --pine-soft: #3d5a4a;
-      --blaze: #c9572a;
-      --blaze-soft: #e08a5f;
-      --line: #d8cfbd;
-      --maxw: 820px;
-    }
-
-    * { box-sizing: border-box; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      margin: 0;
-      background: var(--paper);
-      color: var(--ink);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-size: 18px;
-      line-height: 1.65;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .wrap {
-      max-width: var(--maxw);
-      margin: 0 auto;
-      padding: 0 28px;
-    }
-
-    h1, h2, h3 {
-      font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
-      font-weight: 500;
-      line-height: 1.12;
-      letter-spacing: -0.01em;
-      color: var(--ink);
-    }
-
-    a { color: var(--pine); text-decoration: none; border-bottom: 1px solid var(--line); transition: color .15s, border-color .15s; }
-    a:hover { color: var(--blaze); border-color: var(--blaze-soft); }
-
-    code, pre { font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; }
-
-    /* ---------- hero ---------- */
-    .hero {
-      position: relative;
-      overflow: hidden;
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(180deg, var(--paper-2) 0%, var(--paper) 100%);
-    }
-    .hero svg.topo {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0.5;
-      pointer-events: none;
-    }
-    .hero-inner {
-      position: relative;
-      padding: 96px 0 84px;
-    }
-    .wordmark {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      font-family: 'Fraunces', serif;
-      font-weight: 600;
-      font-size: 22px;
-      letter-spacing: 0.02em;
-      color: var(--pine);
-      margin-bottom: 56px;
-    }
-    .wordmark .blaze-mark {
-      width: 14px; height: 14px;
-      background: var(--blaze);
-      border-radius: 2px;
-      transform: rotate(45deg);
-      box-shadow: 0 0 0 4px rgba(201,87,42,0.14);
-    }
-    .hero h1 {
-      font-size: clamp(38px, 6.2vw, 62px);
-      margin: 0 0 24px;
-      max-width: 14ch;
-    }
-    .hero .lede {
-      font-size: clamp(19px, 2.4vw, 23px);
-      color: var(--ink-soft);
-      max-width: 56ch;
-      margin: 0 0 36px;
-    }
-    .hero .lede strong { color: var(--ink); font-weight: 600; }
-    .cta-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
-    .btn {
-      display: inline-block;
-      padding: 12px 22px;
-      border-radius: 8px;
-      border: 1px solid transparent;
-      font-weight: 500;
-      font-size: 16px;
-    }
-    .btn-primary { background: var(--pine); color: var(--paper); }
-    .btn-primary:hover { background: var(--pine-soft); color: var(--paper); border-color: transparent; }
-    .btn-ghost { border-color: var(--line); color: var(--ink); }
-    .btn-ghost:hover { border-color: var(--blaze-soft); color: var(--blaze); }
-    .meta-line { margin-top: 28px; font-size: 14.5px; color: var(--ink-soft); letter-spacing: 0.01em; }
-
-    /* ---------- sections ---------- */
-    section { padding: 76px 0; border-bottom: 1px solid var(--line); }
-    .eyebrow {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12.5px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--blaze);
-      margin: 0 0 18px;
-    }
-    section h2 { font-size: clamp(28px, 4vw, 38px); margin: 0 0 26px; max-width: 22ch; }
-    .prose p { color: var(--ink-soft); max-width: 60ch; margin: 0 0 20px; }
-    .prose p strong { color: var(--ink); font-weight: 600; }
-    .prose p:last-child { margin-bottom: 0; }
-
-    /* ---------- tool cards ---------- */
-    .tools { display: grid; gap: 22px; margin-top: 8px; }
-    .tool {
-      background: var(--paper-2);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 30px 30px 28px;
-      position: relative;
-    }
-    .tool-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
-    .tool-head h3 { font-size: 27px; margin: 0; color: var(--pine); }
-    .tool-gap {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--blaze);
-      background: rgba(201,87,42,0.10);
-      padding: 4px 10px;
-      border-radius: 999px;
-    }
-    .tool p { margin: 0 0 14px; color: var(--ink-soft); font-size: 16.5px; }
-    .tool p:last-child { margin-bottom: 0; }
-    .tool .repo-link { font-size: 15px; }
-
-    /* ---------- q&a (three questions) ---------- */
-    .qa { margin-top: 6px; display: grid; gap: 30px; }
-    .qa-item { display: grid; grid-template-columns: 2.4rem 1fr; gap: 20px; align-items: start; }
-    .qa-num {
-      font-family: 'Fraunces', Georgia, serif;
-      font-weight: 600;
-      font-size: 30px;
-      line-height: 1.1;
-      color: var(--blaze);
-    }
-    .qa-body h3 { font-size: 22px; margin: 0 0 8px; color: var(--ink); }
-    .qa-body p { margin: 0; color: var(--ink-soft); font-size: 16.5px; max-width: 60ch; }
-    .qa-body p strong { color: var(--pine); font-weight: 600; }
-    @media (max-width: 560px) { .qa-item { grid-template-columns: 1.8rem 1fr; gap: 14px; } }
-
-    /* ---------- code ---------- */
-    pre {
-      background: #211d18;
-      color: #ece4d4;
-      border-radius: 12px;
-      padding: 24px 26px;
-      overflow-x: auto;
-      font-size: 15px;
-      line-height: 1.8;
-      margin: 0 0 22px;
-      border: 1px solid #2e2820;
-    }
-    pre .c { color: #9c8f78; }      /* comment */
-    pre .p { color: var(--blaze-soft); } /* prompt / command head */
-    .note {
-      font-size: 15px;
-      color: var(--ink-soft);
-      background: var(--paper-2);
-      border-left: 3px solid var(--blaze);
-      border-radius: 0 8px 8px 0;
-      padding: 14px 18px;
-      max-width: 62ch;
-    }
-    .note code { color: var(--ink); background: rgba(0,0,0,0.05); padding: 1px 5px; border-radius: 4px; }
-
-    /* ---------- faq ---------- */
-    .faq { margin-top: 10px; border-top: 1px solid var(--line); }
-    .faq details { border-bottom: 1px solid var(--line); }
-    .faq summary {
-      list-style: none;
-      cursor: pointer;
-      padding: 22px 2px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: 21px;
-      font-weight: 500;
-      color: var(--ink);
-      transition: color .15s;
-    }
-    .faq summary::-webkit-details-marker { display: none; }
-    .faq summary:hover { color: var(--pine); }
-    .faq summary .chev {
-      flex: none;
-      font-family: 'Inter', sans-serif;
-      font-weight: 400;
-      font-size: 26px;
-      line-height: 1;
-      color: var(--blaze);
-      transition: transform .2s ease;
-    }
-    .faq details[open] summary .chev { transform: rotate(45deg); }
-    .faq .answer {
-      padding: 0 2px 26px;
-      max-width: 64ch;
-      color: var(--ink-soft);
-      font-size: 16.5px;
-    }
-    .faq .answer p { margin: 0 0 14px; }
-    .faq .answer p:last-child { margin: 0; }
-    .faq .answer a { color: var(--pine); }
-
-    /* ---------- footer ---------- */
-    footer { padding: 54px 0 64px; }
-    .footer-row { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; justify-content: space-between; }
-    footer .links { display: flex; gap: 24px; flex-wrap: wrap; }
-    footer a { border: none; font-size: 15.5px; }
-    footer .fine { font-size: 14px; color: var(--ink-soft); }
-
-    @media (max-width: 560px) {
-      body { font-size: 17px; }
-      .hero-inner { padding: 64px 0 60px; }
-      .wordmark { margin-bottom: 40px; }
-      section { padding: 56px 0; }
-    }
-  </style>
+  <link rel="stylesheet" href="assets/site.css" />
 </head>
 <body>
 
@@ -278,10 +34,10 @@
       <h1>AI can write the code. You&rsquo;re still the engineer.</h1>
       <p class="lede">On its own, a coding agent starts every session from scratch, in a single repo, with no memory of what you already decided. <strong>Trailhead changes that</strong> - durable memory, a workspace that spans every related repo, and a process it actually follows - so working with it feels less like directing a tool and more like building alongside another engineer.</p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="#start">Coming soon</a>
-        <a class="btn btn-ghost" href="#why">Why it exists</a>
+        <a class="btn btn-primary" href="docs/install.html">Get started</a>
+        <a class="btn btn-ghost" href="docs/">Read the docs</a>
       </div>
-      <p class="meta-line">Open source, coming soon &middot; Composable agent-native plugins &middot; Start with memory, add the rest as you go</p>
+      <p class="meta-line">Apache-2.0 &middot; Six composable agent-plugins &middot; Python 3.11+, no third-party dependencies &middot; Start with memory, add the rest as you go</p>
     </div>
   </header>
 
@@ -293,7 +49,7 @@
         <div class="prose">
           <p>Trailhead did not start as a thesis about AI tooling. It started as the daily kit of a sole engineer carrying an entire product: a backend, a web app, an iOS app, the infrastructure underneath, and the AI on top of it. The agents were good at writing code and bad at everything around it. They forgot yesterday&rsquo;s decisions. They had nowhere to work. They one-shot a hack when the job needed a plan.</p>
           <p>So the gaps got filled, one painful Tuesday at a time. What ties the tools together is not a clever theory about AI; it is a plain goal - <strong>let the agent work the way a good engineer already works.</strong> Carry what it learned in one session into the next. Work across the several repos a real product spans, not one at a time. Keep track of the decisions, the lessons, and the dead-ends, so the next change builds on them instead of rediscovering them. The closer the agent works to how you work, the less time you spend re-explaining yourself and the more it feels like building alongside someone instead of managing a tool.</p>
-          <p>What is left is a small, sharp toolset that maps to what a coding agent is missing on its own - memory, environment, and process. They share one organizing idea: the unit of work is not a repo, it is a <strong>group</strong> of related repos. Memory is shared across the group, a workspace spans the group, and a release ships the group as one. That is the part most AI tooling skips, and it is where real products actually live.</p>
+          <p>What is left is a small, sharp toolset that maps to what a coding agent is missing on its own - memory, environment, process, and the long tail of actually shipping. They share one organizing idea: the unit of work is not a repo, it is a <strong>group</strong> of related repos. Memory is shared across the group, a workspace spans the group, and a release ships the group as one. That is the part most AI tooling skips, and it is where real products actually live.</p>
         </div>
       </div>
     </section>
@@ -306,44 +62,45 @@
 
           <article class="tool">
             <div class="tool-head"><h3>lore</h3> <span class="tool-gap">Memory</span></div>
-            <p>Agents forget everything between sessions. lore is durable, structured project memory - a git-backed, plain-text vault of decisions, dead-ends, deferred work, and session notes. The things most tools never write down (what you tried and abandoned, what you are waiting on) are first-class here, and a session note carries the thread from one sitting to the next - so you start warm instead of re-explaining the project every morning. When you come back, it surfaces only the memory that bears on what you are working on, not the whole vault.</p>
-            <p>Memory comes in layers - a personal layer that follows you across everything you build, and a shared layer scoped to the group. So a dead-end you hit in one project is there to warn you in the next, and a decision the group made lives above the repos instead of being trapped in one. Either way the knowledge compounds instead of resetting to zero.</p>
+            <p>Agents forget everything between sessions. lore is durable, structured project memory - a git-backed, plain-text vault of decisions, dead-ends, deferred work, and session notes. The things most tools never write down (what you tried and abandoned, what you are waiting on) are first-class here, and a session note carries the thread from one sitting to the next - so you start warm instead of re-explaining the project every morning.</p>
+            <p>Memory comes in layers - a personal layer that follows you across everything you build, and a shared layer scoped to the group. So a dead-end you hit in one project is there to warn you in the next, and a decision the group made lives above the repos instead of being trapped in one. No service to run and no MCP server: the agent reads and writes through the <code>lore</code> CLI and git, and pulls back the slice that bears on what you are doing.</p>
+            <p class="repo-link"><a href="docs/lore.html">lore documentation &rarr;</a></p>
           </article>
 
           <article class="tool">
             <div class="tool-head"><h3>camp</h3> <span class="tool-gap">Environment</span></div>
-            <p>Real products are rarely one repo. camp treats a group of related repos as a single unit: one worktree spans every repo in the group on matching branches, with everything the product runs on stood up together in one dev environment from a single command.</p>
-            <p>The unit of work becomes the whole product, not a lone checkout. And because camp can bring each worktree&rsquo;s dev environment up in parallel, isolated from the rest, you can keep several going at once without them colliding.</p>
+            <p>Real products are rarely one repo. camp treats a group of related repos as a single unit: one workspace cuts a git worktree across every repo in the group on a matching branch, provisioned by per-repo setup tasks so the whole thing comes up from a single command.</p>
+            <p>The unit of work becomes the whole product, not a lone checkout. Workspaces are isolated from each other, so you can keep several changes going at once without them colliding - and a bookmark points from a workspace back to the agent session you were running in it, so you can walk away and pick it up later.</p>
+            <p class="repo-link"><a href="docs/camp.html">camp documentation &rarr;</a></p>
           </article>
 
           <article class="tool">
             <div class="tool-head"><h3>craft</h3> <span class="tool-gap">Process</span></div>
-            <p>One-shot prompting does not do real engineering. craft is a roster of specialized subagents and a test-driven workflow that runs the real arc of a change - design it, plan it, prove the risky assumptions, build it test-first, then review - and treats that plan as a starting point, not a contract. It expects you to learn as you go: the agent drafts a mockup you can react to before any code is written, proves the shaky assumptions before anything gets built on them, and holds each decision until you actually have the facts to make it. The plan adapts as the work does.</p>
-            <p>Process, encoded - so the agent works the way a careful engineer would, not something that looks finished until you look closer.</p>
+            <p>One-shot prompting does not do real engineering. craft is a roster of specialized subagents and a test-driven workflow that runs the real arc of a change - shape it, attack the spec before it freezes, plan it, prove the risky assumptions, build it test-first, then review - and treats that plan as a starting point, not a contract. It expects you to learn as you go: the agent proves shaky assumptions before anything gets built on them, and holds each decision until you actually have the facts to make it.</p>
+            <p>The work is split across isolated subagents rather than piled into one context - a TDD implementer per slice, a conformance gate behind it, a four-lens council when a decision is genuinely hard. Process, encoded - so the agent works the way a careful engineer would, not something that looks finished until you look closer.</p>
+            <p class="repo-link"><a href="docs/craft.html">craft documentation &rarr;</a></p>
           </article>
 
-          <!-- LAUNCH: uncomment at release. Flip checklist for this release:
-               1. Uncomment the portage tool card below.
-               2. Uncomment the landing tool card below.
-               3. Uncomment the install block in the Getting Started (Status) section.
-               4. REWRITE the Status section copy by hand (it currently says the public repositories aren't open yet) - uncommenting does not fix this line; it must be rewritten to say the repos are now public and installable.
-               5. Re-check that the suite intro prose and the head meta description still read true now that there are 5 tools, not 3. -->
-          <!--
           <article class="tool">
             <div class="tool-head"><h3>portage</h3> <span class="tool-gap">Shipping</span></div>
-            <p>Shipping a change across several repos opens a window where one repo is ahead of the others. portage closes it - it treats the linked pull requests for a change as one release, watches CI on each as they land, and merges them in dependency order so the group moves together instead of drifting out of sync.</p>
-            <p>The unit of release becomes the group, not a lone pull request - so nothing ships half-updated.</p>
+            <p>Shipping a change across several repos opens a window where one repo is ahead of the others. portage closes it - it treats the linked pull requests for a change as one release, watches CI on each, triages the failures and the review comments as they come in, and merges in the dependency order you declared so the group moves together instead of drifting out of sync.</p>
+            <p>The unit of release becomes the group, not a lone pull request. Merging is opt-in and fail-closed: without explicit authorization in the group config, portage refuses to merge anything at all.</p>
+            <p class="repo-link"><a href="docs/portage.html">portage documentation &rarr;</a></p>
           </article>
-          -->
 
-          <!-- LAUNCH: uncomment at release -->
-          <!--
           <article class="tool">
-            <div class="tool-head"><h3>landing</h3> <span class="tool-gap">Deploy health</span></div>
-            <p>A merge landing clean is not the same as a deploy staying healthy. landing soaks each deploy after it lands - watching the health signal that matters for the minutes after a merge - and if something regresses, it investigates the failure and escalates with a diagnosis instead of leaving you to notice a silent breakage.</p>
-            <p>Merging is not the finish line - landing keeps watching after the merge does.</p>
+            <div class="tool-head"><h3>ranger</h3> <span class="tool-gap">Autonomy</span></div>
+            <p>craft&rsquo;s rituals are good per change, but each one wants an operator. ranger runs them across a whole backlog without you sitting there - one sweep shapes every unshaped task in the queue, another builds every task that is ready, each in its own throwaway workspace, each pushed to a pull request.</p>
+            <p>It is deliberately bounded: concurrency limits, a cap on unmerged work in flight, and a deadline on every watch. The state lives in files rather than in a transcript, so a drain can be interrupted and resumed, and it hands back a written report instead of a wall of chat.</p>
+            <p class="repo-link"><a href="docs/ranger.html">ranger documentation &rarr;</a></p>
           </article>
-          -->
+
+          <article class="tool">
+            <div class="tool-head"><h3>outpost</h3> <span class="tool-gap">Review loop</span></div>
+            <p>Reviewing an agent&rsquo;s work by scrolling a terminal is the wrong shape for the job. outpost turns it around: you read the diffs, specs, and decision records in a local web cockpit and leave inline comments, then the agent picks those comments up, acts on each one, and replies - applying the change or pushing back with a reason.</p>
+            <p>It binds to loopback only, and the actions that must be human - authoring a review, resolving a comment - are gated behind a browser session the agent never holds. Your review text is treated as data to act on, never as instructions to obey. <strong>Requires a companion cockpit application that is not yet publicly released</strong> - see the docs before you plan around it.</p>
+            <p class="repo-link"><a href="docs/outpost.html">outpost documentation &rarr;</a></p>
+          </article>
 
         </div>
       </div>
@@ -367,7 +124,7 @@
             <div class="qa-num">2</div>
             <div class="qa-body">
               <h3>How does one change span several repos?</h3>
-              <p>A single feature is often a backend change and a client change and an infra change at once. <strong>camp</strong> cuts one worktree across every repo in the group on matching branches, so the unit of work is the whole change - built and tested together in one dev environment before any of it lands.</p>
+              <p>A single feature is often a backend change and a client change and an infra change at once. <strong>camp</strong> cuts one workspace across every repo in the group on matching branches, so the unit of work is the whole change - built and tested together before any of it lands.</p>
             </div>
           </div>
 
@@ -375,7 +132,7 @@
             <div class="qa-num">3</div>
             <div class="qa-body">
               <h3>How do they ship without breaking each other?</h3>
-              <p>Split a change across repos and you open a window where one is ahead of the others. <strong>trailhead</strong> lands the pieces as linked pull requests treated as one release - merged in dependency order - so that window never opens.</p>
+              <p>Split a change across repos and you open a window where one is ahead of the others. <strong>portage</strong> lands the pieces as linked pull requests treated as one release - merged in the dependency order you declare - so that window never opens.</p>
             </div>
           </div>
 
@@ -392,30 +149,28 @@
           <p><strong>Specialized subagents on the right model.</strong> craft hands the bulky, low-judgment work - reading test logs, diffs, CI output, long files, wide searches - to small subagents running on the cheapest capable model. Only their conclusion comes back, so the expensive model never pays to read the raw stream.</p>
           <p><strong>Recall that loads only what is relevant.</strong> lore pulls the slice of memory that bears on what you are doing, not the whole vault - so recall cost scales with relevance, not with how much you have piled up. And because every note is typed and conventional in shape, the agent spends little effort working out what a document is and whether it matters.</p>
           <p><strong>Checkpoint, then clear.</strong> lore can snapshot the state that matters from a session into its notes - so when a context window fills with noise you can compact or clear it and pick the thread back up warm, instead of dragging a bloated transcript along just to keep your place.</p>
-          <p><strong>Install only what you will use.</strong> Every skill and agent you wire in costs context on every turn. Trailhead lets you pick capabilities - start with just memory, add the planning circle, the dev environment, or design authoring when you actually want them - so you never pay context for power you are not using.</p>
+          <p><strong>Install only what you will use.</strong> Every skill and agent you wire in costs context on every turn. Trailhead lets you pick capabilities - down to the individual subagent or skill - so you never pay context for power you are not using.</p>
         </div>
       </div>
     </section>
 
     <section id="start">
       <div class="wrap">
-        <p class="eyebrow">Status</p>
-        <h2>Coming soon.</h2>
+        <p class="eyebrow">Get started</p>
+        <h2>Clone it and run one command.</h2>
         <div class="prose" style="margin-bottom: 28px;">
-          <p>Trailhead is in daily use building real products - and it is being readied for an open-source release: the small management CLI plus the lore, camp, and craft plugins it manages. Each tool is self-contained and independently adoptable, so when it lands most people will start with lore and grow into camp and craft as the need shows up.</p>
-          <p>The public repositories aren&rsquo;t open yet. The install flow and per-tool docs land with the release.</p>
-        </div>
-        <div class="note">
-          Want to know when it ships? Watch the <a href="https://github.com/trailhead-ai">trailhead-ai</a> org - the repositories go public at launch.
+          <p>There is no package to download and no <code>pip install</code> step - the checkout is the source. The installer auto-detects your harness, wires in the plugins you asked for, and puts the plugin CLIs on your PATH.</p>
         </div>
 
-        <!-- LAUNCH: uncomment at release -->
-        <!--
-        <pre><span class="p">$ git clone https://github.com/trailhead-ai/trailhead.git trailhead</span>
+<pre><span class="p">$ git clone https://github.com/trailhead-ai/trailhead.git</span>
 <span class="p">$ cd trailhead</span>
 <span class="p">$ ./bin/trailhead install</span>
-<span class="c"># requires Python 3.11 or newer, no pip install step, restart your shell (or start a fresh agent session) afterward</span></pre>
-        -->
+<span class="c"># then add the shell line it prints to your profile, and restart your shell</span>
+<span class="p">$ eval "$(/path/to/trailhead/bin/trailhead shellenv)"</span></pre>
+
+        <div class="note">
+          Requires <strong>Python 3.11 or newer</strong> and no third-party packages. After installing, restart your shell so the CLIs resolve and start a fresh agent session so the plugins load. Full walkthrough in the <a href="docs/install.html">installation guide</a>, or jump to the <a href="docs/quickstart.html">quickstart</a> to set up your first group.
+        </div>
       </div>
     </section>
 
@@ -438,7 +193,8 @@
           <details open>
             <summary>Do I have to use all of them? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>No. Each one stands on its own - lore is a memory layer for any agentic setup, camp is multi-repo worktree and dev-environment orchestration, craft is the planning and execution workflow. Adopt one, some, or all of them. craft is never a dependency of the others.</p>
+              <p>No. Install as many or as few as you like - down to the individual subagent or skill. lore is a memory layer for any agentic setup, camp is multi-repo worktree orchestration, craft is the planning and execution workflow. Adopt one, some, or all of them. craft is never a dependency of the others.</p>
+              <p>Most people start with lore and grow into camp and craft as the need shows up.</p>
             </div>
           </details>
 
@@ -452,28 +208,42 @@
           <details>
             <summary>Does my code or data leave my machine? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>No. Everything is local-first and plain-text - a git-backed vault and plain files on disk. There is no cloud service in the loop and nothing phones home, which also makes the suite a fit for regulated environments.</p>
+              <p>No. Everything is local-first and plain-text - a git-backed vault and plain files on disk. There is no cloud service in the loop and nothing phones home, which also makes the suite a fit for regulated environments. There is no MCP server to run either: the agent works through the CLIs over your shell.</p>
             </div>
           </details>
 
           <details>
             <summary>Which agent harness does it work with? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>Trailhead is harness-neutral by design - every capability wires through a harness seam, a single interface between the tools and whatever agent is driving them. Claude Code is what it runs on today; supporting a new harness means implementing that one interface, not rewriting the tools themselves.</p>
+              <p>Trailhead is harness-neutral by design - every capability wires through a harness seam, a single interface between the tools and whatever agent is driving them. <strong>Claude Code is the harness that ships today.</strong> Supporting a new one means implementing that one interface and registering it; it requires no changes to the shared install path.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Does it work with GitLab, or another host? <span class="chev">+</span></summary>
+            <div class="answer">
+              <p>Not yet. lore, camp, and craft are host-agnostic - they only need git. portage and ranger reach a code host to open, watch, and merge pull requests, and <strong>GitHub is the only provider implemented today</strong>. The provider sits behind its own interface, so adding another is a contained change rather than a rewrite.</p>
             </div>
           </details>
 
           <details>
             <summary>Can my team or company self-host it? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>Yes. Forked and self-hosted installs are first-class - point it at your own repositories, run the whole suite off your own infrastructure, no hardcoded upstream and no callbacks required.</p>
+              <p>Yes. Forked and self-hosted installs are first-class - point it at your own repositories, run the whole suite off your own infrastructure, no hardcoded upstream and no callbacks required. Installing from your own fork is the same clone-and-run flow.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>How do I upgrade? <span class="chev">+</span></summary>
+            <div class="answer">
+              <p><code>git pull</code> in the checkout and re-run <code>./bin/trailhead install</code>. Upgrades are additive - re-running install only adds, so removing something from your config never removes it from the install. To drop pieces, uninstall and re-install with a narrower config. Uninstalling keeps your data: the vault, your groups, and each plugin&rsquo;s data survive a later re-install.</p>
             </div>
           </details>
 
           <details>
             <summary>What does it cost? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>lore, camp, and craft will be open source under Apache-2.0 at launch - free to use, free to fork.</p>
+              <p>Nothing. Trailhead is open source under Apache-2.0 - free to use, free to fork. You pay your model provider for tokens, as you already do.</p>
             </div>
           </details>
 
@@ -484,12 +254,13 @@
 
   <footer>
     <div class="wrap footer-row">
-      <span class="fine">Apache-2.0 at launch &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
+      <span class="fine">Apache-2.0 &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
       <span class="links">
-        <a href="https://github.com/trailhead-ai">GitHub</a>
+        <a href="docs/">Docs</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
         <a href="#why">Why</a>
         <a href="#tools">Tools</a>
-        <a href="#start">Status</a>
+        <a href="#start">Install</a>
         <a href="#faq">FAQ</a>
       </span>
     </div>

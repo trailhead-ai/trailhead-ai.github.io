@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trailhead docs - overview</title>
+  <meta name="description" content="Documentation for Trailhead: what it is, how the six agent-plugins fit together, and where to start." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="wordmark" href="../index.html"><span class="blaze-mark"></span> trailhead</a>
+      <nav>
+        <a href="index.html" class="current">Docs</a>
+        <a href="../index.html#tools">Tools</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="docs-shell">
+    <aside class="docs-nav">
+      <h4>Getting started</h4>
+      <ul>
+        <li><a href="index.html" class="current">Overview</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="quickstart.html">Quickstart</a></li>
+        <li><a href="concepts.html">Concepts</a></li>
+      </ul>
+      <h4>Plugins</h4>
+      <ul>
+        <li><a href="lore.html">lore &mdash; memory</a></li>
+        <li><a href="camp.html">camp &mdash; workspaces</a></li>
+        <li><a href="craft.html">craft &mdash; process</a></li>
+        <li><a href="portage.html">portage &mdash; shipping</a></li>
+        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
+        <li><a href="outpost.html">outpost &mdash; review</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-main">
+      <p class="eyebrow">Documentation</p>
+      <h1>Trailhead docs</h1>
+      <p class="lede">Trailhead is scaffolding for agent-native development: durable memory, multi-repo workspaces, and an engineering process your coding agent actually follows. It installs into the agent harness you already use.</p>
+
+      <p>Everything here is local-first and plain text. There is no service to sign up for and no MCP server &mdash; the agent works through command-line tools over your shell, and state lives in git repositories and files on your own disk. Search runs off a local index that is derived from those files and can be rebuilt from them at any time.</p>
+
+      <h2>Start here</h2>
+      <div class="card-grid">
+        <a class="card" href="install.html">
+          <h3>Install</h3>
+          <p>Requirements, the clone-and-run install, PATH setup, upgrading, and the <code>trailhead</code> command reference.</p>
+        </a>
+        <a class="card" href="quickstart.html">
+          <h3>Quickstart</h3>
+          <p>Your first hour: create a group, open a workspace, capture your first memory, and ship a change.</p>
+        </a>
+        <a class="card" href="concepts.html">
+          <h3>Concepts</h3>
+          <p>The vocabulary the tools share &mdash; groups, workspaces, vaults, records, and the harness seam.</p>
+        </a>
+      </div>
+
+      <h2>How the pieces fit</h2>
+      <p>Trailhead is one management CLI plus six agent-plugins. The CLI composes the plugins you select and wires them into your harness; the plugins are what your agent actually uses. They map onto the things a coding model does not have on its own:</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Plugin</th><th>Covers</th><th>What it gives the agent</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><a href="lore.html"><code>lore</code></a></td><td>Memory</td><td>A git-backed vault of decisions, lessons, tasks, and session notes it can search and add to</td></tr>
+            <tr><td><a href="camp.html"><code>camp</code></a></td><td>Environment</td><td>One workspace spanning every repo in a group, on matching branches, provisioned and ready</td></tr>
+            <tr><td><a href="craft.html"><code>craft</code></a></td><td>Process</td><td>Rituals for shaping, planning, building test-first, and reviewing &mdash; run by specialist subagents</td></tr>
+            <tr><td><a href="portage.html"><code>portage</code></a></td><td>Shipping</td><td>Linked pull requests treated as one release: pushed, watched, triaged, merged in order</td></tr>
+            <tr><td><a href="ranger.html"><code>ranger</code></a></td><td>Autonomy</td><td>Unattended drains that shape and build a whole backlog inside bounded concurrency</td></tr>
+            <tr><td><a href="outpost.html"><code>outpost</code></a></td><td>Review</td><td>A local web cockpit where you review the agent's work and it picks your comments back up</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>The organizing idea underneath all of them is the <strong>group</strong>: a named set of repositories worked on together. Memory is scoped to the group, a workspace spans the group, and a release ships the group as one unit. If you only ever work in a single repository, a group of one works fine &mdash; but the design assumes real products span several.</p>
+
+      <h3>They are independent on purpose</h3>
+      <p>Nothing here is all-or-nothing. You can install a single plugin, or a single skill within a plugin. Common paths:</p>
+      <ul>
+        <li><strong>Just memory.</strong> Install <code>lore</code> alone and keep whatever workflow you already like. It has no dependency on the others.</li>
+        <li><strong>Memory and workspaces.</strong> Add <code>camp</code> when a change starts spanning more than one repository.</li>
+        <li><strong>The full loop.</strong> Add <code>craft</code> for process and <code>portage</code> for shipping once you want the agent running the whole arc of a change.</li>
+        <li><strong>Hands off.</strong> Add <code>ranger</code> last &mdash; it drives craft and portage across a backlog, so it only makes sense once those are in place.</li>
+      </ul>
+      <p><code>craft</code> is never a dependency of the others. <code>lore</code>, <code>camp</code>, <code>portage</code>, and <code>ranger</code> each ship a command-line tool; <code>craft</code> and <code>outpost</code> are skills and subagents only.</p>
+
+      <h2>What you need</h2>
+      <ul>
+        <li><strong>Python 3.11 or newer.</strong> No third-party packages &mdash; the standard library is the whole runtime dependency set. Your system <code>python3</code> may be older than 3.11; check before you start.</li>
+        <li><strong>git</strong>, and a shell (<code>bash</code>, <code>zsh</code>, or <code>fish</code>).</li>
+        <li><strong>An agent harness.</strong> Claude Code is what ships today.</li>
+        <li><strong>The GitHub CLI</strong> (<code>gh</code>), authenticated &mdash; only if you want <code>portage</code> or <code>ranger</code> to open and merge pull requests.</li>
+      </ul>
+
+      <h2>Scope and honest limits</h2>
+      <p>Trailhead is version 0.1.0 and in daily use building real products, but it is young. Worth knowing before you plan around it:</p>
+      <div class="note">
+        <p><strong>Claude Code is the only harness implemented.</strong> The architecture is harness-neutral &mdash; every capability wires through a single interface, and adding a harness requires no changes to the shared install path &mdash; but Codex, Cursor, and others are an extension point today, not shipped support.</p>
+        <p><strong>GitHub is the only code host implemented.</strong> This affects <code>portage</code> and <code>ranger</code> only; the rest of the suite just needs git.</p>
+        <p><strong>Memory recall is pull-based.</strong> The agent searches the vault when it decides to. There is no hook that automatically injects relevant memory into a conversation.</p>
+        <p><strong><code>outpost</code> needs a companion application that is not yet publicly released.</strong> Read the <a href="outpost.html">outpost page</a> before counting on it.</p>
+      </div>
+
+      <div class="pager">
+        <a class="next" href="install.html"><span class="dir">Next</span> Install &rarr;</a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="docs-foot">
+    <div class="wrap footer-row">
+      <span class="fine">Apache-2.0 &middot; built by <a href="https://tomduffield.com">Tom Duffield</a></span>
+      <span class="links">
+        <a href="../index.html">Home</a>
+        <a href="https://github.com/trailhead-ai/trailhead">GitHub</a>
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>
