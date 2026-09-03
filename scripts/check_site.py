@@ -121,9 +121,9 @@ index = ROOT / "index.html"
 if index in pages:
     _, visible = pages[index]
     cards = len(re.findall(r'<article class="tool">', visible))
-    if cards != 6:
-        failures.append(f"index.html: expected 6 tool cards, found {cards}")
-    for tool in ("lore", "camp", "craft", "portage", "ranger", "outpost"):
+    if cards != 5:
+        failures.append(f"index.html: expected 5 tool cards, found {cards}")
+    for tool in ("lore", "camp", "craft", "portage", "outpost"):
         if not re.search(rf"<h3>{tool}</h3>", visible):
             failures.append(f"index.html: missing tool card for {tool}")
 

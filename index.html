@@ -37,7 +37,7 @@
         <a class="btn btn-primary" href="docs/install.html">Get started</a>
         <a class="btn btn-ghost" href="docs/">Read the docs</a>
       </div>
-      <p class="meta-line">Apache-2.0 &middot; Six composable agent-plugins &middot; Python 3.11+, no third-party dependencies &middot; Start with memory, add the rest as you go</p>
+      <p class="meta-line">Apache-2.0 &middot; Five composable agent-plugins &middot; Python 3.11+, no third-party dependencies &middot; Start with memory, add the rest as you go</p>
     </div>
   </header>
 
@@ -86,13 +86,6 @@
             <p>Shipping a change across several repos opens a window where one repo is ahead of the others. portage closes it - it treats the linked pull requests for a change as one release, watches CI on each, triages the failures and the review comments as they come in, and merges in the dependency order you declared so the group moves together instead of drifting out of sync.</p>
             <p>The unit of release becomes the group, not a lone pull request. Merging is opt-in and fail-closed: without explicit authorization in the group config, portage refuses to merge anything at all.</p>
             <p class="repo-link"><a href="docs/portage.html">portage documentation &rarr;</a></p>
-          </article>
-
-          <article class="tool">
-            <div class="tool-head"><h3>ranger</h3> <span class="tool-gap">Autonomy</span></div>
-            <p>craft&rsquo;s rituals are good per change, but each one wants an operator. ranger runs them across a whole backlog without you sitting there - one sweep shapes every unshaped task in the queue, another builds every task that is ready, each in its own throwaway workspace, each pushed to a pull request.</p>
-            <p>It is deliberately bounded: concurrency limits, a cap on unmerged work in flight, and a deadline on every watch. The state lives in files rather than in a transcript, so a drain can be interrupted and resumed, and it hands back a written report instead of a wall of chat.</p>
-            <p class="repo-link"><a href="docs/ranger.html">ranger documentation &rarr;</a></p>
           </article>
 
           <article class="tool">
@@ -222,7 +215,7 @@
           <details>
             <summary>Does it work with GitLab, or another host? <span class="chev">+</span></summary>
             <div class="answer">
-              <p>Not yet. lore, camp, and craft are host-agnostic - they only need git. portage and ranger reach a code host to open, watch, and merge pull requests, and <strong>GitHub is the only provider implemented today</strong>. The provider sits behind its own interface, so adding another is a contained change rather than a rewrite.</p>
+              <p>Not yet. lore, camp, and craft are host-agnostic - they only need git. portage reaches a code host to open, watch, and merge pull requests, and <strong>GitHub is the only provider implemented today</strong>. The provider sits behind its own interface, so adding another is a contained change rather than a rewrite.</p>
             </div>
           </details>
 

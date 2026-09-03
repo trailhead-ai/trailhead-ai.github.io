@@ -38,7 +38,6 @@
         <li><a href="camp.html">camp &mdash; workspaces</a></li>
         <li><a href="craft.html">craft &mdash; process</a></li>
         <li><a href="portage.html">portage &mdash; shipping</a></li>
-        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
         <li><a href="outpost.html">outpost &mdash; review</a></li>
       </ul>
     </aside>
@@ -58,7 +57,7 @@
       <p>Each repository belongs to <strong>exactly one</strong> group &mdash; overlap is not allowed, and the rule is enforced rather than merely advised. A <strong>member</strong> is one repository's entry in the group, carrying its path and its provisioning steps. If you work in a single repository, a group of one is perfectly reasonable; the design simply assumes most real products are not.</p>
 
       <div class="note">
-        Group definitions live in <code>~/.config/camp/groups/&lt;name&gt;.toml</code> and are plain, hand-editable TOML. They are the one piece of configuration worth understanding properly, because <code>camp</code>, <code>portage</code>, and <code>ranger</code> all read from them.
+        Group definitions live in <code>~/.config/camp/groups/&lt;name&gt;.toml</code> and are plain, hand-editable TOML. They are the one piece of configuration worth understanding properly, because both <code>camp</code> and <code>portage</code> read from them.
       </div>
 
       <h2>Workspaces and worktrees</h2>
@@ -117,7 +116,7 @@
 
       <h2>Harnesses, plugins, skills, and subagents</h2>
       <p>A <strong>harness</strong> is the agent application you drive &mdash; Claude Code today. Trailhead never speaks to a harness directly from its shared code; everything goes through the <strong>harness seam</strong>, one interface that harness-specific code implements. Adding a new harness means writing that one implementation, with no changes to the shared install path.</p>
-      <p>A <strong>plugin</strong> is one of the six tools. What a plugin actually gives your agent comes in two forms:</p>
+      <p>A <strong>plugin</strong> is one of the five tools. What a plugin actually gives your agent comes in two forms:</p>
       <ul>
         <li>A <strong>skill</strong> is a procedure the agent follows &mdash; invoked by name, like <code>/craft:plan</code>, or triggered when the situation matches.</li>
         <li>A <strong>subagent</strong> is a specialist dispatched into its own fresh context to do one job and report back a conclusion. This is what keeps bulky work &mdash; reading logs, diffs, wide searches &mdash; from filling up the main conversation.</li>
@@ -132,8 +131,6 @@
           <tbody>
             <tr><td><code>craft</code> &rarr; <code>lore</code></td><td>craft stores specs, plans, tasks, and ADRs through a note store; lore is the only implemented provider</td></tr>
             <tr><td><code>portage</code> &rarr; <code>camp</code></td><td>portage reads the repository set and release settings from the camp group definition</td></tr>
-            <tr><td><code>ranger</code> &rarr; <code>craft</code>, <code>camp</code>, <code>lore</code></td><td>ranger drives craft's rituals over a vault's task queue, one ephemeral camp workspace per task</td></tr>
-            <tr><td><code>ranger</code> &rarr; <code>portage</code></td><td>Optional. Without it, ranger runs in a degraded mode with no pull-request tail</td></tr>
           </tbody>
         </table>
       </div>
