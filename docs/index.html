@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Trailhead docs - overview</title>
-  <meta name="description" content="Documentation for Trailhead: what it is, how the six agent-plugins fit together, and where to start." />
+  <meta name="description" content="Documentation for Trailhead: what it is, how the five agent-plugins fit together, and where to start." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -38,7 +38,6 @@
         <li><a href="camp.html">camp &mdash; workspaces</a></li>
         <li><a href="craft.html">craft &mdash; process</a></li>
         <li><a href="portage.html">portage &mdash; shipping</a></li>
-        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
         <li><a href="outpost.html">outpost &mdash; review</a></li>
       </ul>
     </aside>
@@ -67,7 +66,7 @@
       </div>
 
       <h2>How the pieces fit</h2>
-      <p>Trailhead is one management CLI plus six agent-plugins. The CLI composes the plugins you select and wires them into your harness; the plugins are what your agent actually uses. They map onto the things a coding model does not have on its own:</p>
+      <p>Trailhead is one management CLI plus five agent-plugins. The CLI composes the plugins you select and wires them into your harness; the plugins are what your agent actually uses. They map onto the things a coding model does not have on its own:</p>
 
       <div class="table-scroll">
         <table>
@@ -79,7 +78,6 @@
             <tr><td><a href="camp.html"><code>camp</code></a></td><td>Environment</td><td>One workspace spanning every repo in a group, on matching branches, provisioned and ready</td></tr>
             <tr><td><a href="craft.html"><code>craft</code></a></td><td>Process</td><td>Rituals for shaping, planning, building test-first, and reviewing &mdash; run by specialist subagents</td></tr>
             <tr><td><a href="portage.html"><code>portage</code></a></td><td>Shipping</td><td>Linked pull requests treated as one release: pushed, watched, triaged, merged in order</td></tr>
-            <tr><td><a href="ranger.html"><code>ranger</code></a></td><td>Autonomy</td><td>Unattended drains that shape and build a whole backlog inside bounded concurrency</td></tr>
             <tr><td><a href="outpost.html"><code>outpost</code></a></td><td>Review</td><td>A local web cockpit where you review the agent's work and it picks your comments back up</td></tr>
           </tbody>
         </table>
@@ -93,23 +91,22 @@
         <li><strong>Just memory.</strong> Install <code>lore</code> alone and keep whatever workflow you already like. It has no dependency on the others.</li>
         <li><strong>Memory and workspaces.</strong> Add <code>camp</code> when a change starts spanning more than one repository.</li>
         <li><strong>The full loop.</strong> Add <code>craft</code> for process and <code>portage</code> for shipping once you want the agent running the whole arc of a change.</li>
-        <li><strong>Hands off.</strong> Add <code>ranger</code> last &mdash; it drives craft and portage across a backlog, so it only makes sense once those are in place.</li>
       </ul>
-      <p><code>craft</code> is never a dependency of the others. <code>lore</code>, <code>camp</code>, <code>portage</code>, and <code>ranger</code> each ship a command-line tool; <code>craft</code> and <code>outpost</code> are skills and subagents only.</p>
+      <p><code>craft</code> is never a dependency of the others. <code>lore</code>, <code>camp</code>, and <code>portage</code> each ship a command-line tool; <code>craft</code> and <code>outpost</code> are skills and subagents only.</p>
 
       <h2>What you need</h2>
       <ul>
         <li><strong>Python 3.11 or newer.</strong> No third-party packages &mdash; the standard library is the whole runtime dependency set. Your system <code>python3</code> may be older than 3.11; check before you start.</li>
         <li><strong>git</strong>, and a shell (<code>bash</code>, <code>zsh</code>, or <code>fish</code>).</li>
         <li><strong>An agent harness.</strong> Claude Code is what ships today.</li>
-        <li><strong>The GitHub CLI</strong> (<code>gh</code>), authenticated &mdash; only if you want <code>portage</code> or <code>ranger</code> to open and merge pull requests.</li>
+        <li><strong>The GitHub CLI</strong> (<code>gh</code>), authenticated &mdash; only if you want <code>portage</code> to open and merge pull requests.</li>
       </ul>
 
       <h2>Scope and honest limits</h2>
       <p>Trailhead is version 0.1.0 and in daily use building real products, but it is young. Worth knowing before you plan around it:</p>
       <div class="note">
         <p><strong>Claude Code is the only harness implemented.</strong> The architecture is harness-neutral &mdash; every capability wires through a single interface, and adding a harness requires no changes to the shared install path &mdash; but Codex, Cursor, and others are an extension point today, not shipped support.</p>
-        <p><strong>GitHub is the only code host implemented.</strong> This affects <code>portage</code> and <code>ranger</code> only; the rest of the suite just needs git.</p>
+        <p><strong>GitHub is the only code host implemented.</strong> This affects <code>portage</code> only; the rest of the suite just needs git.</p>
         <p><strong>Memory recall is pull-based.</strong> The agent searches the vault when it decides to. There is no hook that automatically injects relevant memory into a conversation.</p>
         <p><strong><code>outpost</code> needs a companion application that is not yet publicly released.</strong> Read the <a href="outpost.html">outpost page</a> before counting on it.</p>
       </div>

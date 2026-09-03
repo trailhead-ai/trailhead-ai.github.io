@@ -38,7 +38,6 @@
         <li><a href="camp.html">camp &mdash; workspaces</a></li>
         <li><a href="craft.html">craft &mdash; process</a></li>
         <li><a href="portage.html">portage &mdash; shipping</a></li>
-        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
         <li><a href="outpost.html">outpost &mdash; review</a></li>
       </ul>
     </aside>
@@ -54,7 +53,7 @@
         <li><strong>git.</strong> Used for the checkout and for the memory vault, which is itself a git repository.</li>
         <li><strong>A supported shell</strong> &mdash; <code>bash</code>, <code>zsh</code>, or <code>fish</code>.</li>
         <li><strong>An agent harness.</strong> Claude Code is the harness that ships today. Trailhead detects it by the presence of a <code>~/.claude</code> directory.</li>
-        <li><strong>The GitHub CLI</strong> (<code>gh</code>), authenticated &mdash; only needed if you want <code>portage</code> or <code>ranger</code> to open, watch, and merge pull requests.</li>
+        <li><strong>The GitHub CLI</strong> (<code>gh</code>), authenticated &mdash; only needed if you want <code>portage</code> to open, watch, and merge pull requests.</li>
       </ul>
 
       <h2>Install</h2>
@@ -64,7 +63,7 @@
 <span class="p">$ cd trailhead</span>
 <span class="p">$ ./bin/trailhead install</span></pre>
 
-      <p>With no flags, <code>install</code> auto-detects your harness, installs all six agent-plugins, and builds command-line shims for the plugins that ship a CLI. It prints a summary of what it did and what you still need to do.</p>
+      <p>With no flags, <code>install</code> auto-detects your harness, installs all five agent-plugins, and builds command-line shims for the plugins that ship a CLI. It prints a summary of what it did and what you still need to do.</p>
 
       <p>Here is what happens under the covers, in order:</p>
       <ol>
@@ -90,7 +89,7 @@
       <p>What that one line sets up:</p>
       <ul>
         <li><code>TRAILHEAD_ROOT</code>, pointing at your checkout.</li>
-        <li>The shim directory on your <code>PATH</code>, so <code>lore</code>, <code>camp</code>, <code>portage</code>, and <code>ranger</code> resolve.</li>
+        <li>The shim directory on your <code>PATH</code>, so <code>lore</code>, <code>camp</code>, and <code>portage</code> resolve.</li>
         <li>A <code>trailhead</code> shell function that re-resolves itself from the profile line at every shell startup. This is why moving or re-cloning the checkout only requires editing that one line &mdash; you do not need to re-run the installer.</li>
         <li>A <code>camp</code> wrapper function. Camp never moves your shell by itself, so this wrapper is what lets <code>camp new</code> and <code>camp remove</code> actually change your working directory. Without it those commands still do their work and print the path, they just leave you where you were &mdash; and <code>camp resume</code> refuses outright rather than printing a line that would do nothing.</li>
       </ul>
@@ -105,13 +104,12 @@ trailhead doctor (read-only report):
 
   claude_code:
     marketplace: trailhead (registered)
-    installed: camp, craft, lore, outpost, portage, ranger
+    installed: camp, craft, lore, outpost, portage
 
   CLIs on PATH:
     lore: /Users/you/.local/state/trailhead/bin/lore
     camp: /Users/you/.local/state/trailhead/bin/camp
     portage: /Users/you/.local/state/trailhead/bin/portage
-    ranger: /Users/you/.local/state/trailhead/bin/ranger
     trailhead: /Users/you/.local/state/trailhead/bin/trailhead
   shim dir: /Users/you/.local/state/trailhead/bin (present)
   python3: Python 3.11.9</pre>
@@ -119,7 +117,7 @@ trailhead doctor (read-only report):
       <p>Pass <code>--json</code> for a machine-readable version of the same report.</p>
 
       <h2>Choosing what to install</h2>
-      <p>You do not have to take all six plugins. The most common starting point is memory alone:</p>
+      <p>You do not have to take all five plugins. The most common starting point is memory alone:</p>
 
 <pre><span class="p">$ ./bin/trailhead install --plugin lore</span>
 <span class="c"># or a couple of them</span>
@@ -152,7 +150,6 @@ trailhead doctor (read-only report):
 install_camp_cli = true
 install_lore_cli = true
 install_portage_cli = false
-install_ranger_cli = false
 
 <span class="c"># Default plugin set, applied to every detected or named harness.</span>
 plugins = ["lore", "camp", "craft"]

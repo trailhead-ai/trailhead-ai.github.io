@@ -38,7 +38,6 @@
         <li><a href="camp.html">camp &mdash; workspaces</a></li>
         <li><a href="craft.html" class="current">craft &mdash; process</a></li>
         <li><a href="portage.html">portage &mdash; shipping</a></li>
-        <li><a href="ranger.html">ranger &mdash; autonomy</a></li>
         <li><a href="outpost.html">outpost &mdash; review</a></li>
       </ul>
     </aside>
@@ -259,7 +258,7 @@
       <p><strong><code>lore</code> is the only implemented provider.</strong> Records are created and updated through the <code>lore</code> CLI, which is why craft &mdash; alone among the plugins &mdash; has a dependency: it needs lore for storage. Alternative providers behind the same contract, and per-repo configuration to elect between them, are deferred. There is no second provider to fall back to today, and the seam says so out loud rather than pretending otherwise. If the <code>lore</code> CLI is absent entirely, the planner falls back to a documented manual-write path.</p>
 
       <div class="note">
-        <p><strong>craft is never a dependency of the other plugins</strong> &mdash; nothing in lore, camp, portage, ranger, or outpost requires it, and you can run any of them without it. The dependency runs the other way: craft needs lore to store what it produces.</p>
+        <p><strong>craft is never a dependency of the other plugins</strong> &mdash; nothing in lore, camp, portage, or outpost requires it, and you can run any of them without it. The dependency runs the other way: craft needs lore to store what it produces.</p>
       </div>
 
       <h2>The pre-commit leak gate</h2>
