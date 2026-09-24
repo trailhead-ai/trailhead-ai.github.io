@@ -47,6 +47,10 @@
       <h1>Installing Trailhead</h1>
       <p class="lede">Trailhead installs by cloning the repository and running one command. There is no package to download, no remote fetch, and no <code>pip install</code> step &mdash; the checkout is the source.</p>
 
+      <div class="note">
+        <strong>Let your agent do it.</strong> Trailhead ships an install guide written for agents. Tell yours: <em>&ldquo;Read https://github.com/trailhead-ai/trailhead/blob/main/INSTALL.md and set trailhead up for me.&rdquo;</em> It checks your prerequisites, asks which plugins you want, installs them, puts the CLIs on your PATH, and joins or creates your lore vaults.
+      </div>
+
       <h2>Requirements</h2>
       <ul>
         <li><strong>Python 3.11 or newer.</strong> Trailhead has zero third-party runtime dependencies &mdash; the standard library is all it needs. Your system <code>python3</code> may well be older than 3.11; check with <code>python3 --version</code> before you start.</li>
@@ -192,11 +196,10 @@ name = "claude_code"
       <p>On Windows these resolve under <code>%APPDATA%</code> and <code>%LOCALAPPDATA%</code> instead. Each application also honours its own override variable &mdash; <code>LORE_CONFIG_DIR</code>, <code>CAMP_STATE_DIR</code>, and so on &mdash; which is how the test suite avoids touching real data.</p>
 
       <h2>Upgrading</h2>
-<pre><span class="p">$ cd /path/to/trailhead</span>
-<span class="p">$ git pull</span>
-<span class="p">$ ./bin/trailhead install</span></pre>
+<pre><span class="p">$ trailhead update --check</span>   <span class="c"># read-only: is anything behind?</span>
+<span class="p">$ trailhead update</span>           <span class="c"># fetch, fast-forward, and re-wire &mdash; asks first</span></pre>
 
-      <p>There is no <code>trailhead update</code> command; pulling and re-running the installer is the upgrade path.</p>
+      <p><code>update</code> fast-forwards your checkout to its tracked branch and re-wires every plugin. It asks for confirmation first, or takes <code>--yes</code>. It refuses a checkout with uncommitted changes, and if re-wiring fails partway, it rolls the checkout back so a failed upgrade changes nothing. If your outpost <code>config.toml</code> names a <code>checkout</code>, the same command also fast-forwards, rebuilds, and restarts the outpost daemon.</p>
 
       <div class="note">
         <strong>Upgrades are additive.</strong> Re-running <code>install</code> only ever adds. Removing a plugin from your config does not remove it from the install. To actually drop pieces, uninstall and re-install with a narrower config.
@@ -217,8 +220,9 @@ name = "claude_code"
             <tr><td><code>trailhead install</code></td><td>Install plugins into your harness(es) and the plugin CLIs onto PATH</td></tr>
             <tr><td><code>trailhead uninstall</code></td><td>Remove the entire install. Keeps your data. <code>--yes</code>, <code>--quiet</code>, <code>--json</code></td></tr>
             <tr><td><code>trailhead doctor</code></td><td>Read-only report of what is installed. <code>--json</code></td></tr>
+            <tr><td><code>trailhead update</code></td><td>Upgrade the install, and a configured outpost daemon, from the checkout's tracked branch. <code>--check</code>, <code>--json</code>, <code>--yes</code>, <code>--dry-run</code></td></tr>
             <tr><td><code>trailhead shellenv</code></td><td>Print the shell environment to evaluate. <code>--shell fish|zsh|bash</code></td></tr>
-            <tr><td><code>trailhead outpost &lt;verb&gt;</code></td><td>Manage the outpost daemon: <code>start</code>, <code>stop</code>, <code>status</code>, <code>restart</code></td></tr>
+            <tr><td><code>trailhead outpost &lt;verb&gt;</code></td><td>Manage the outpost daemon: <code>start</code>, <code>stop</code>, <code>status</code>, <code>restart</code>, <code>open</code>, <code>enable</code>, <code>disable</code></td></tr>
           </tbody>
         </table>
       </div>
