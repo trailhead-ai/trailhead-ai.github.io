@@ -84,14 +84,14 @@
           <article class="tool">
             <div class="tool-head"><h3>portage</h3> <span class="tool-gap">Shipping</span></div>
             <p>Shipping a change across several repos opens a window where one repo is ahead of the others. portage closes it - it treats the linked pull requests for a change as one release, watches CI on each, triages the failures and the review comments as they come in, and merges in the dependency order you declared so the group moves together instead of drifting out of sync.</p>
-            <p>The unit of release becomes the group, not a lone pull request. Merging is opt-in and fail-closed: without explicit authorization in the group config, portage refuses to merge anything at all.</p>
+            <p>The unit of release becomes the group, not a lone pull request. Merging is opt-in and fail-closed: unless the group config grants standing authorization or you tell it to merge, portage stops with the pull requests ready and waits for you.</p>
             <p class="repo-link"><a href="docs/portage.html">portage documentation &rarr;</a></p>
           </article>
 
           <article class="tool">
-            <div class="tool-head"><h3>outpost</h3> <span class="tool-gap">Review loop</span></div>
-            <p>Reviewing an agent&rsquo;s work by scrolling a terminal is the wrong shape for the job. outpost turns it around: you read the diffs, specs, and decision records in a local web cockpit and leave inline comments, then the agent picks those comments up, acts on each one, and replies - applying the change or pushing back with a reason.</p>
-            <p>It binds to loopback only, and the actions that must be human - authoring a review, resolving a comment - are gated behind a browser session the agent never holds. Your review text is treated as data to act on, never as instructions to obey. <strong>Requires a companion cockpit application that is not yet publicly released</strong> - see the docs before you plan around it.</p>
+            <div class="tool-head"><h3>outpost</h3> <span class="tool-gap">Cockpit</span></div>
+            <p>Run several agent workstreams at once and the hard part becomes knowing which one needs you. outpost is a local cockpit: it watches your lore vaults, flags the ones that need you, and serves records and published sites as a browsable reader, so every link the agent prints opens somewhere you can read it.</p>
+            <p>It also serves your vaults as a browsable reader - every record at a stable URL, with static sites published into a vault served alongside them - from a daemon bound to loopback only. <strong>Requires a companion cockpit application that is not yet publicly released</strong> - see the docs before you plan around it.</p>
             <p class="repo-link"><a href="docs/outpost.html">outpost documentation &rarr;</a></p>
           </article>
 
