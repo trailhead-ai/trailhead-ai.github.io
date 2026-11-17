@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Trailhead docs - camp</title>
-  <meta name="description" content="camp: one workspace spanning every repository in a group, on matching branches, provisioned and ready. Groups, workspaces, tasks, bookmarks, and the full command reference." />
+  <meta name="description" content="camp: one workspace spanning every repository in a group, on matching branches, provisioned and ready. Groups, workspaces, tmux sessions, tasks, remote hosts, and the full command reference." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -38,20 +38,20 @@
         <li><a href="camp.html" class="current">camp &mdash; workspaces</a></li>
         <li><a href="craft.html">craft &mdash; process</a></li>
         <li><a href="portage.html">portage &mdash; shipping</a></li>
-        <li><a href="outpost.html">outpost &mdash; review</a></li>
+        <li><a href="outpost.html">outpost &mdash; cockpit</a></li>
       </ul>
     </aside>
 
     <main class="docs-main">
       <p class="eyebrow">Plugin</p>
       <h1>camp &mdash; multi-repo workspaces</h1>
-      <p class="lede">One command opens a workspace spanning every repository in a group: a git worktree per repo, all on the same branch, provisioned and ready to work in. One command tears it down.</p>
+      <p class="lede">One command opens a workspace spanning every repository in a group: a git worktree per repo, all on the same branch, provisioned, with its own tmux session to work in. One command tears it down.</p>
 
       <p>A real feature rarely lives in one repository. It touches the API, the client, and the shared schema package, and those are three checkouts, three branches with three chances to name them differently, and three sets of bootstrap steps before anything runs. Doing that by hand is tedious for a person and error-prone for an agent &mdash; the most common failure is not a bad edit, it is an edit made in the wrong checkout, or on the wrong branch, or in a tree that was never bootstrapped.</p>
 
-      <p><code>camp</code> makes that unit &mdash; the set of worktrees a single change spans &mdash; a first-class thing with a name. You declare a <strong>group</strong> once: the repositories you work on together. From then on <code>camp new &lt;slug&gt;</code> creates a git worktree in every member repo on a branch derived from the slug, runs whatever provisioning steps you configured, and hands back one directory containing all of them. <code>camp status</code> answers &ldquo;is it ready?&rdquo; and <code>camp remove</code> takes the whole thing away.</p>
+      <p><code>camp</code> makes that unit &mdash; the set of worktrees a single change spans &mdash; a first-class thing with a name. You declare a <strong>group</strong> once: the repositories you work on together. From then on <code>camp new &lt;slug&gt;</code> creates a git worktree in every member repo on a branch derived from the slug, runs whatever provisioning steps you configured, and hands your terminal to a tmux session rooted in the one directory that holds all of them. <code>camp status</code> answers &ldquo;is it ready?&rdquo;, <code>camp attach</code> takes you back to it later, <code>camp stop</code> ends its session, and <code>camp remove</code> takes the whole thing away.</p>
 
-      <p>camp is deliberately narrow about what it does <em>not</em> do. It never starts, stops, or replaces a process, and it never changes your shell&rsquo;s directory on its own. It answers <em>where to go and what to run</em>, and a small shell wrapper acts on that answer. That boundary is why camp is safe for an agent to call: the worst it can do is print a path.</p>
+      <p>camp is deliberately narrow about what it does <em>not</em> do. It never starts a harness conversation for you: a workspace&rsquo;s session opens on a plain shell, and you run <code>claude</code> &mdash; or anything else &mdash; in whichever pane you like. It never resumes one on your behalf either; when a session comes back, each window tells you how to resume what it held and leaves the choice to you. And it never changes your shell&rsquo;s directory on its own. That boundary is why camp is safe for an agent to call.</p>
 
       <div class="note">
         <p>camp works <strong>without the other plugins and outside a harness session</strong> &mdash; it needs no <code>lore</code> vault and no <code>craft</code> ritual. It is not trailhead-free, though: the <code>camp</code> CLI locates a trailhead checkout by walking up from its own location, or via <code>$TRAILHEAD_ROOT</code>, and exits if it finds neither.</p>
@@ -71,10 +71,12 @@
             <tr><td><strong>Slug</strong></td><td>The workspace&rsquo;s name and address. Matches <code>^[a-z0-9-]+$</code>; other input is normalized, with a notice on stderr. Path-traversal sequences and shell metacharacters are rejected outright, not normalized.</td></tr>
             <tr><td><strong>Worktree</strong></td><td>One member&rsquo;s git worktree inside the workspace. A real checkout of that repo &mdash; git commands work normally in it.</td></tr>
             <tr><td><strong>Branch pattern</strong></td><td>How the slug becomes a branch name. Default <code>worktree-{slug}</code>, so slug <code>login-rework</code> gives branch <code>worktree-login-rework</code> in every member.</td></tr>
+            <tr><td><strong>Session</strong></td><td>The workspace&rsquo;s tmux session, named <code>camp-&lt;group&gt;-&lt;slug&gt;</code> and rooted at the workspace. Its windows and panes are ordinary tmux ones. A harness conversation started in any pane is recorded against the window it runs in, one per window, so a session that has died comes back with its windows and a resume line for each conversation.</td></tr>
             <tr><td><strong>Task</strong></td><td>A named, multi-step provisioning unit referenced per member. Steps are argv lists (never a shell string) with <code>{repo_root}</code> / <code>{worktree}</code> / <code>{workspace}</code> / <code>{slug}</code> placeholders. Carries <code>phase</code> (<code>provision</code>, the default, or <code>activate</code>), <code>required</code> (default <code>false</code>), and <code>timeout_seconds</code>. Completion is recorded per member in the manifest, so a task that finished <code>ok</code> is never re-run &mdash; only failed and never-run tasks execute.</td></tr>
             <tr><td><strong>Harness profile</strong></td><td>Optional <code>[harness]</code> block: <code>doc_files</code> (the workspace doc to write, default <code>CLAUDE.md</code>), <code>binary</code> (harness binary name, default <code>claude</code> &mdash; only its basename is read; camp does not launch it), <code>inject</code> (<code>claude-hook</code> or <code>stdout</code>), and <code>pretrust</code> (pre-seed Claude Code&rsquo;s per-directory trust flag, default <code>true</code>).</td></tr>
-            <tr><td><strong>Bookmark and ref</strong></td><td>A durable named pointer from a workspace back to the harness session you were running in it. The <strong>ref</strong> is its short name (<code>^[a-z0-9][a-z0-9._-]{0,63}$</code>, defaulting to the slug); the store is global to the machine, so a ref resolves without knowing its group.</td></tr>
-            <tr><td><strong>Drift</strong></td><td>Disagreement between the workspace manifest, git&rsquo;s own worktree list, and the instance registry. <code>camp doctor</code> checks that consistency; <code>camp status --json</code> carries a <code>drift</code> block. See <a href="#limits">honest limits</a> for what is a placeholder today.</td></tr>
+            <tr><td><strong>Account</strong></td><td>Optional <code>[launch] account</code> key naming the harness account a group works under, such as <code>~/.claude-work</code>. Every pane in the group&rsquo;s sessions starts on it. Every declared account is also added to camp&rsquo;s credential deny list, so no session window can be rooted in one.</td></tr>
+            <tr><td><strong>Host</strong></td><td>Another machine you declare in <code>~/.config/camp/hosts.toml</code>. Workspace verbs that take <code>--host &lt;name&gt;</code> run the same command on that machine over SSH, and <code>camp transfer</code> moves a workspace to it.</td></tr>
+            <tr><td><strong>Drift</strong></td><td>How far a member&rsquo;s branch has moved from its base: ahead and behind counts, and whether its upstream is gone, reported per member by <code>camp status</code>. Separately, <code>camp doctor</code> checks that the workspace manifest, git&rsquo;s own worktree list, and the instance registry agree; see <a href="#limits">honest limits</a> for the registry half.</td></tr>
           </tbody>
         </table>
       </div>
@@ -85,7 +87,7 @@
 
 <pre><span class="p">$ camp group demo --member api=/Users/you/code/api --member web=/Users/you/code/web</span></pre>
 
-      <p>That authors the config from the flags and wires the session hooks into each member repo. It refuses to overwrite an existing config unless you pass <code>--force</code>, and it verifies each <code>repo_root</code> exists and is a git repository unless you pass <code>--allow-missing</code>. <code>camp group &lt;name&gt; --scaffold</code> writes a commented stub for you to edit by hand instead (and wires no hooks); <code>camp group &lt;name&gt;</code> with no other flags re-wires hooks for a group that is already configured.</p>
+      <p>That authors the config from the flags and wires the session hooks into each member repo. It refuses to overwrite an existing config unless you pass <code>--force</code>, and it verifies each <code>repo_root</code> exists and is a git repository unless you pass <code>--allow-missing</code>. <code>camp group &lt;name&gt; --scaffold</code> writes a commented stub for you to edit by hand instead (and wires no hooks); <code>camp group &lt;name&gt;</code> with no other flags re-wires hooks for a group that is already configured. <code>camp groups</code> lists every configured group and its members, from any directory.</p>
 
       <h3>An annotated config</h3>
 
@@ -141,53 +143,56 @@ cmd = ["code-review-graph", "build", "--repo", "{worktree}"]
 
       <h2>The workspace lifecycle</h2>
 
-      <p><strong>Create or enter.</strong> <code>camp new &lt;slug&gt;</code> is the single entry point for both. If no manifest exists for that slug it creates the workspace &mdash; a worktree per member on the pattern branch &mdash; and provisions in the background; if one does exist it re-enters without re-provisioning or clobbering anything. Either way the workspace&rsquo;s absolute path is the only thing on stdout.</p>
+      <p><strong>Create or enter.</strong> <code>camp new &lt;slug&gt;</code> is the single entry point for both. If no manifest exists for that slug it creates the workspace &mdash; a worktree per member on the pattern branch &mdash; and provisions in the background; if one does exist it re-enters without re-provisioning or clobbering anything. Either way it then creates the workspace&rsquo;s tmux session, or joins it if one is already running, and hands your terminal to it. <code>--no-attach</code> creates the session but leaves your terminal where it is; <code>--no-session</code> creates the workspace with no tmux session at all. The workspace&rsquo;s absolute path is the only thing on stdout, so <code>camp new</code> composes in scripts.</p>
 
-      <p><strong>Check it.</strong> <code>camp status</code> with a slug resolvable from cwd or <code>--name</code> prints the per-member provision state &mdash; <code>pending</code>, <code>ready</code>, or <code>failed</code> &mdash; and exits with a code an agent can branch on: <code>0</code> all ready, <code>2</code> some pending, <code>3</code> some failed. Run outside any workspace it prints the fleet-wide table of every workspace, its branch, and its members, and exits <code>0</code>. <code>camp list</code> (alias <code>ls</code>) prints slug and path, one per line, for scripting.</p>
+      <p><strong>Check it.</strong> <code>camp status</code> with a slug resolvable from cwd or <code>--name</code> prints the per-member provision state &mdash; <code>pending</code>, <code>ready</code>, or <code>failed</code> &mdash; and exits with a code an agent can branch on: <code>0</code> all ready, <code>2</code> some pending, <code>3</code> some failed. Run outside any workspace it prints the fleet-wide table of every workspace, its branch, and its members, and exits <code>0</code>. <code>camp list</code> (alias <code>ls</code>) prints a table of workspaces with their session state and when each was last touched; <code>--json</code> gives the same for scripting.</p>
 
-      <p><strong>Provision and activate.</strong> <code>camp setup</code> re-runs outstanding work for a workspace &mdash; pending or failed members and any task not yet recorded <code>ok</code>. <code>camp activate &lt;member&gt;</code> runs that member&rsquo;s <code>activate</code>-phase tasks and surfaces its workspace doc (<code>CLAUDE.md</code> by default) as context for the current session.</p>
+      <p><strong>Come back to it.</strong> <code>camp attach &lt;slug&gt;</code> hands your terminal to a workspace&rsquo;s session &mdash; creating it if nothing is running, joining it if something is. With no slug it offers a numbered picker over the group&rsquo;s workspaces. From inside tmux it switches your client rather than nesting, so hopping between workspaces never tears down the one you came from. If the session had died, attaching brings its windows back, and each window that held a conversation prints the harness command to resume it. <code>camp stop &lt;slug&gt;</code> previews what is running in the session&rsquo;s windows, then kills the session; stopping a workspace that is already down is success.</p>
+
+      <p><strong>Provision and activate.</strong> <code>camp setup</code> re-runs outstanding work for a workspace &mdash; pending or failed members and any task not yet recorded <code>ok</code>. <code>camp activate &lt;member&gt;</code> runs that member&rsquo;s <code>activate</code>-phase tasks and surfaces its workspace doc (<code>CLAUDE.md</code> by default) as context for the current session. <code>camp new --activate</code> starts every member&rsquo;s activate-phase work in the background once the workspace reaches boot-readiness; add <code>--no-wait</code> to skip that wait.</p>
 
       <p><strong>Work across members.</strong> <code>camp foreach &lt;cmd&gt;</code> runs a command in each member worktree with no shell interpretation, skipping members whose worktree is absent. <code>--fail-fast</code> stops at the first failure; <code>--json</code> gives a per-member result map.</p>
 
-      <p><strong>Keep it current.</strong> <code>camp sync</code> fast-forwards canonical checkouts to <code>origin/main</code> and is safe by default &mdash; a dirty or off-main repo is skipped, not reset, unless you pass <code>--force</code>. <code>camp rebase [--onto &lt;branch&gt;]</code> rebases the workspace branches onto <code>origin/main</code> and stops with the conflicting repo named when a rebase conflicts. Both have real caveats today; see <a href="#limits">honest limits</a>.</p>
+      <p><strong>Keep it current.</strong> <code>camp sync</code> fetches and fast-forwards each member&rsquo;s canonical checkout to <code>origin/main</code> and is safe by default &mdash; a dirty or off-main repo is skipped, not reset, unless you pass <code>--force</code>. <code>camp rebase [--onto &lt;branch&gt;]</code> rebases each member&rsquo;s workspace branch onto <code>origin/main</code>, or the branch you name, and names every member whose rebase failed.</p>
 
-      <p><strong>Tear it down.</strong> <code>camp remove</code> (alias <code>rm</code>) removes the workspace and its worktrees. It refuses on a dirty tree unless you pass <code>--force</code>, and it is guarded when the workspace still holds a bookmark. On success it clears that workspace&rsquo;s bookmarks and prints the first member&rsquo;s repo root &mdash; the place your shell should land, since the directory it was standing in no longer exists. On any failure, including partial removal, stdout is empty and the exit is nonzero.</p>
+      <p><strong>Tear it down.</strong> <code>camp remove</code> (alias <code>rm</code>) removes the workspace and its worktrees. It refuses on a dirty tree, and refuses while a harness conversation rooted in the workspace could still be resumed, unless you pass <code>--force</code>. It leaves the workspace&rsquo;s tmux session alone, so run <code>camp stop</code> first. Run from inside the workspace, it prints the first member&rsquo;s repo root on success &mdash; the place your shell should land, since the directory it was standing in is gone. On any failure, including partial removal, stdout is empty and the exit is nonzero.</p>
 
       <h3>camp never moves your shell &mdash; the wrapper does</h3>
 
-      <p>Three verbs answer a question whose answer is a place: <code>camp new</code> (go here), <code>camp remove</code> (you can no longer stand there, go here instead), and <code>camp resume</code> (go here and run this). camp prints those answers and stops. Acting on them &mdash; the <code>cd</code>, and for <code>resume</code> the launch of the harness &mdash; needs a shell function, which is what the trailhead <code>shellenv</code> line installs:</p>
+      <p><code>camp new</code> and <code>camp attach</code> need no help: they hand your terminal to a tmux session already rooted in the workspace, so there is nowhere left to <code>cd</code>. <code>camp remove</code> is different. Run from inside the workspace, it deletes the directory your shell is standing in, prints where you should go instead, and stops. Acting on that answer needs a shell function, which is what the trailhead <code>shellenv</code> line installs:</p>
 
 <pre><span class="p">$ eval "$(/path/to/trailhead/bin/trailhead shellenv)"</span>
 <span class="c"># add that to your shell profile — fish, zsh, and bash are all handled</span></pre>
 
-      <p>The wrapper it defines intercepts those three verbs and acts on what camp printed. Without it, <code>camp resume</code> <strong>refuses outright</strong> rather than printing two lines that look like success and do nothing. <code>camp new</code> and <code>camp remove</code> still do their work and print the path, but nothing takes you there &mdash; they add a one-line tip on stderr pointing at the <code>shellenv</code> line. If a camp command tells you the shell integration is not active, this is the fix.</p>
+      <p>The wrapper it defines intercepts <code>camp remove</code> and <code>camp rm</code> and changes into the group&rsquo;s first-member repo that camp printed. Without it, <code>camp remove</code> still does its work and prints the path, but nothing takes you there &mdash; it adds a one-line tip on stderr pointing at the <code>shellenv</code> line. To go to a workspace from a plain shell without a session, <code>cd "$(camp pwd &lt;slug&gt;)"</code> works anywhere.</p>
 
-      <div class="note">
-        <p><code>camp resume</code> replaces your shell&rsquo;s foreground process. A user runs it in their own shell &mdash; an agent should relay the command, not run it on the user&rsquo;s behalf.</p>
-      </div>
+      <h2 id="working-across-machines">Working across machines</h2>
 
-      <h2>Bookmarks</h2>
+      <p>camp can drive workspaces on other machines you reach over SSH. Declare each one once, along with this machine&rsquo;s own name:</p>
 
-      <p>A bookmark is a durable named pointer from a camp workspace to the harness session you were running in it &mdash; what turns &ldquo;pick this back up next week&rdquo; into one command. Capture is cwd-scoped: run it from inside the workspace you want to keep, and the ref defaults to that workspace&rsquo;s slug.</p>
+<pre><span class="c"># ~/.config/camp/hosts.toml</span>
+self_name = "sunrise"
 
-<pre><span class="p">$ camp bookmark --ref login --note "waiting on the schema PR"</span>
-<span class="p">$ camp bookmark ls</span>
-<span class="p">$ camp resume login</span>
-<span class="p">$ camp bookmark rm login</span></pre>
+[hosts.andromeda]
+ssh = "andromeda.lan"
+<span class="c"># Where camp lives on that machine; a plain ssh command rarely has it on PATH.</span>
+camp_bin = "/home/you/.local/state/trailhead/bin/camp"</pre>
 
-      <p>A workspace holds at most one bookmark. Re-capturing under the same ref updates it in place; re-capturing under a different ref is refused, naming the existing one, because dropping a bookmark is always explicit. A ref already held by another workspace is refused rather than stolen.</p>
+      <p><code>camp new</code>, <code>camp attach</code>, <code>camp status</code>, <code>camp stop</code>, and <code>camp remove</code> all take <code>--host &lt;name&gt;</code>. The group resolves on this machine &mdash; from <code>--group</code>, or from your current directory &mdash; and is forwarded by name, so the far side needs a group configured under the same name with its member repos already cloned. <code>camp list --host &lt;name&gt;</code> lists every group&rsquo;s workspaces on one machine; <code>camp list --all-hosts</code> (<code>-a</code>) lists this group&rsquo;s workspaces on every declared machine plus this one, and <code>-ag</code> widens that to every group.</p>
 
-      <p><code>ls</code>, <code>rm</code>, and <code>resume</code> address a ref, so they work from any directory including outside every group. <code>camp bookmark ls</code> lists every bookmark on the machine, most recently updated first, and marks rows that need attention: <code>[workspace gone]</code> or <code>[transcript gone]</code> when the bookmark points at nothing (the fix is <code>rm</code>), and <code>[expires ~Nd]</code> when the harness&rsquo;s own transcript retention is closing in. Bookmarks outlive that retention window &mdash; after cleanup a bookmark is a pointer to nothing.</p>
+      <p><code>camp transfer &lt;slug&gt; --to &lt;peer&gt;</code> moves a workspace to a declared peer: its committed history, its working-tree content, and the conversations rooted in it, with ownership moving to the peer as the last step. <code>--dry-run</code> previews every check without moving anything. Each member declares an <code>excluded</code> list of regenerable paths such as <code>node_modules</code> &mdash; an empty list is a valid answer, but a member that declares nothing is refused by name. A failed transfer exits with a code that says whether ownership moved and whether re-running is safe; <code>camp --help</code> lists them.</p>
+
+      <p><code>camp env</code> works with the dev environments running in Docker on this machine and on the hosts you opt in with an <code>env_hosts</code> list in <code>hosts.toml</code>. <code>camp env ls</code> lists them, <code>camp env attach &lt;name&gt;</code> puts one on this machine&rsquo;s localhost at its standard ports, and <code>camp env status</code> and <code>camp env detach</code> show and end the attachment. An environment appears once its containers carry camp&rsquo;s <code>camp.env.group</code> and <code>camp.env.name</code> labels.</p>
 
       <h2>Hooks camp writes into your repos</h2>
 
       <p>Wiring a group modifies files in your repositories, so it is worth knowing exactly what changes. <code>camp group</code> writes a <strong>SessionStart</strong> hook entry into each member repo&rsquo;s <code>.claude/settings.json</code>, invoking camp&rsquo;s own session-bootstrap handler. Each workspace additionally gets its own <code>.claude/settings.json</code> with a SessionStart hook that reports provision status, and &mdash; when the inject strategy is <code>claude-hook</code> &mdash; a <strong>PostToolUse</strong> hook that loads a member&rsquo;s doc silently into context mid-session instead of dumping it to the log.</p>
 
-      <p>The writes go through a JSON load-and-dump, never string templating: unrelated keys are preserved, paths with spaces or quotes round-trip, and re-running adds no duplicate entries. The command is written as <code>${CAMP_BIN:-&lt;absolute path&gt;}</code> so you can override the binary without editing settings files.</p>
+      <p>The writes go through a JSON load-and-dump, never string templating: unrelated keys are preserved, paths with spaces or quotes round-trip, and re-running adds no duplicate entries. The command is written as <code>${CAMP_BIN:-&lt;absolute path&gt;}</code> so you can override the binary without editing settings files. The window-by-window conversation record is a separate hook that ships inside the camp plugin itself, not in your repos.</p>
 
       <h2>Command reference</h2>
 
-      <p>Every command below is verified against <code>camp --help</code> and the CLI source. <code>--group &lt;name&gt;</code> works on any group-aware command to target a group from outside it; <code>--dry-run</code> (or <code>CAMP_DRY_RUN=1</code>) prints what camp would execute without running it.</p>
+      <p>Every command below is verified against <code>camp --help</code> and the CLI source. <code>--group &lt;name&gt;</code> works on any group-aware command to target a group from outside it; <code>--dry-run</code> (or <code>CAMP_DRY_RUN=1</code>) prints what camp would execute without running it. The verbs listed under <a href="#working-across-machines">working across machines</a> also take <code>--host &lt;name&gt;</code>.</p>
 
       <div class="table-scroll">
         <table>
@@ -195,20 +200,22 @@ cmd = ["code-review-graph", "build", "--repo", "{worktree}"]
             <tr><th>Command</th><th>Does</th></tr>
           </thead>
           <tbody>
-            <tr><td><code>camp new &lt;slug&gt;</code></td><td>Create or re-enter a workspace. Prints its path on stdout.</td></tr>
+            <tr><td><code>camp new &lt;slug&gt; [--no-attach] [--no-session] [--activate] [--no-wait] [--json]</code></td><td>Create or re-enter a workspace, then attach to its tmux session. Prints its path on stdout.</td></tr>
+            <tr><td><code>camp attach [&lt;slug&gt;]</code></td><td>Hand your terminal to a workspace&rsquo;s session, creating it if nothing is running. No slug: a numbered picker.</td></tr>
+            <tr><td><code>camp stop &lt;slug&gt; [--json]</code></td><td>Preview, then kill a workspace&rsquo;s tmux session.</td></tr>
             <tr><td><code>camp pwd &lt;slug&gt;</code></td><td>Print a workspace path &mdash; exactly one line on stdout, safe for <code>cd "$(camp pwd &lt;slug&gt;)"</code>.</td></tr>
             <tr><td><code>camp group &lt;name&gt; [--member NAME=PATH] [--branch-pattern P] [--scaffold] [--force] [--allow-missing]</code></td><td>Author a group config and wire hooks.</td></tr>
-            <tr><td><code>camp list [--json]</code></td><td>List all workspaces. Alias <code>ls</code>.</td></tr>
+            <tr><td><code>camp groups [--json]</code></td><td>List every configured group and its members. Any cwd.</td></tr>
+            <tr><td><code>camp list [--json] [--all-groups] [--all-hosts]</code></td><td>List workspaces with session state and last-touched time. Alias <code>ls</code>.</td></tr>
             <tr><td><code>camp status [--name &lt;slug&gt;] [--json]</code></td><td>Per-member provision state (exit 0/2/3) or the fleet table.</td></tr>
             <tr><td><code>camp activate &lt;member&gt; [--name &lt;slug&gt;]</code></td><td>Run a member&rsquo;s activate-phase tasks and surface its workspace doc.</td></tr>
             <tr><td><code>camp setup [--background] [--json]</code></td><td>Provision or retry members and outstanding tasks.</td></tr>
             <tr><td><code>camp remove [--force] [--name &lt;slug&gt;]</code></td><td>Tear a workspace down. Alias <code>rm</code>.</td></tr>
-            <tr><td><code>camp sync [--force] [--json]</code></td><td>Fast-forward canonical checkouts to <code>origin/main</code>.</td></tr>
+            <tr><td><code>camp sync [--force] [--json]</code></td><td>Fast-forward each member&rsquo;s canonical checkout to <code>origin/main</code>.</td></tr>
             <tr><td><code>camp rebase [--onto &lt;branch&gt;] [--name &lt;slug&gt;]</code></td><td>Rebase the workspace branches.</td></tr>
             <tr><td><code>camp foreach [--fail-fast] [--json] &lt;cmd&gt;</code></td><td>Run a command in each member worktree.</td></tr>
-            <tr><td><code>camp bookmark [--ref &lt;ref&gt;] [--note &lt;text&gt;]</code></td><td>Bookmark this workspace&rsquo;s harness session.</td></tr>
-            <tr><td><code>camp bookmark ls</code> / <code>camp bookmark rm &lt;ref&gt;</code></td><td>List every bookmark / drop one. Any cwd.</td></tr>
-            <tr><td><code>camp resume &lt;ref&gt;</code></td><td>Re-enter a bookmarked session. Requires the shell integration.</td></tr>
+            <tr><td><code>camp transfer &lt;slug&gt; --to &lt;peer&gt; [--dry-run] [--overwrite] [--json]</code></td><td>Move a workspace, its conversations, and its ownership to a declared peer host.</td></tr>
+            <tr><td><code>camp env ls [HOST]</code> / <code>attach &lt;target&gt;</code> / <code>status</code> / <code>detach</code></td><td>List dev environments / put one on this machine&rsquo;s localhost / show / end the attachment. Any cwd.</td></tr>
             <tr><td><code>camp doctor [--json]</code></td><td>Read-only health check: toolchain resolution plus manifest, git-worktree, and registry consistency.</td></tr>
             <tr><td><code>camp --version</code> / <code>camp --which</code></td><td>Version and resolved group / the resolved binary path.</td></tr>
           </tbody>
@@ -223,42 +230,44 @@ cmd = ["code-review-graph", "build", "--repo", "{worktree}"]
 <span class="c">#    and wires the SessionStart hook into both repos.</span>
 <span class="p">$ camp group demo --member api=/Users/you/code/api --member web=/Users/you/code/web</span>
 
-<span class="c"># 2. Open a workspace. With the shellenv wrapper active this also cd's you in.</span>
+<span class="c"># 2. Open a workspace. camp hands your terminal to its tmux session.</span>
 <span class="p">$ camp new login-rework</span>
 camp new: created workspace 'login-rework' — provisioning in the background
   check provisioning: camp status login-rework
   activates when ready, or run: camp activate login-rework
 /Users/you/.local/state/camp/demo/worktrees/login-rework
+created camp-demo-login-rework
 
-<span class="c"># 3. Both repos are checked out on worktree-login-rework, side by side.</span>
+<span class="c"># 3. You are in the session, at the workspace root. Both repos are</span>
+<span class="c">#    checked out on worktree-login-rework, side by side.</span>
 <span class="p">$ ls</span>
 api  web
 
 <span class="c"># 4. Is it ready? Exits 0 all ready, 2 some pending, 3 some failed.</span>
 <span class="p">$ camp status</span>
 
-<span class="c"># 5. Work normally — these are ordinary git checkouts.</span>
+<span class="c"># 5. Work normally — start claude in any pane; these are ordinary git checkouts.</span>
 <span class="p">$ camp foreach git status --short</span>
 
-<span class="c"># 6. Stopping for the week? Name the session so you can come back.</span>
-<span class="p">$ camp bookmark --ref login --note "waiting on the schema PR"</span>
-<span class="p">$ camp resume login</span>
+<span class="c"># 6. Stepping away? Detach from tmux, and come back to it later.</span>
+<span class="p">$ camp attach login-rework</span>
 
-<span class="c"># 7. Done. Refuses on a dirty tree without --force, and returns you</span>
-<span class="c">#    to the group repo because the directory you were in is gone.</span>
-<span class="p">$ camp remove</span></pre>
+<span class="c"># 7. Done. Stop the session, then remove the workspace. remove refuses</span>
+<span class="c">#    on a dirty tree or a resumable conversation without --force.</span>
+<span class="p">$ camp stop login-rework</span>
+<span class="p">$ camp remove --name login-rework</span></pre>
 
       <h2 id="limits">Honest limits</h2>
 
       <p>camp is in daily use, and these are the sharp edges worth knowing before you plan around it.</p>
 
       <div class="note">
-        <p><strong>The shell wrapper is not optional in practice.</strong> Without <code>eval "$(trailhead shellenv)"</code> in your profile, <code>camp resume</code> refuses to run at all, and <code>camp new</code> and <code>camp remove</code> leave your shell wherever it was. This is the most common source of confusion with camp.</p>
-        <p><strong>Dev-environment orchestration is deferred.</strong> There is no <code>[dev_env]</code> capability in the group config and camp&rsquo;s <code>doctor</code> carries no dev-env probes. Provisioning is what you write into tasks, nothing more.</p>
-        <p><strong><code>camp sync</code> is narrower than it reads.</strong> Today it fast-forwards trailhead&rsquo;s own canonical checkout rather than every member of your group; operating on group members is future work.</p>
-        <p><strong><code>camp rebase</code> delegates to a helper script</strong> that is not shipped in the repository today, so it fails with a &ldquo;rebase script not found&rdquo; error unless you supply one. Rebasing member branches by hand, or via <code>camp foreach</code>, works fine in the meantime.</p>
-        <p><strong>Registry-drift detection is a placeholder.</strong> Nothing writes the instance registry yet, so the <code>drift</code> block in <code>camp status --json</code> is always empty and <code>camp doctor</code>&rsquo;s consistency check always reports no drift. The manifest and git-worktree halves of that check are real.</p>
-        <p><strong>Claude Code is the only harness implemented.</strong> Harness profiles do support <code>AGENTS.md</code>-style doc files and a <code>stdout</code> injection floor that works with any tool, but the session hooks and the trust pre-seed are Claude Code integrations.</p>
+        <p><strong>Sessions need tmux.</strong> Without it, <code>camp new</code> still creates the workspace and prints its path, with a warning that it could not reach a session, and <code>camp attach</code> refuses. <code>camp new --no-session</code> is the way to work without tmux on purpose.</p>
+        <p><strong>Dev-environment orchestration is not camp&rsquo;s job.</strong> <code>camp env</code> lists and forwards environments, but never starts, builds, or health-checks them. Provisioning a workspace is what you write into tasks, nothing more.</p>
+        <p><strong><code>camp rebase</code> leaves conflicts for you.</strong> A member whose rebase conflicts is named and left mid-rebase in its worktree; camp carries on with the rest and exits nonzero.</p>
+        <p><strong>Registry-drift detection is a placeholder.</strong> Nothing writes the instance registry, so <code>camp doctor</code>&rsquo;s registry consistency check always reports no drift. The manifest and git-worktree halves of that check are real.</p>
+        <p><strong>Host names are trusted, not checked.</strong> Every machine a transfer runs between must declare its own, different <code>self_name</code>. Two machines sharing a name pass every ownership check on both sides, and nothing catches it for you.</p>
+        <p><strong>Claude Code is the only harness implemented.</strong> Harness profiles do support <code>AGENTS.md</code>-style doc files and a <code>stdout</code> injection floor that works with any tool, but the session hooks, conversation recording, and the trust pre-seed are Claude Code integrations.</p>
       </div>
 
       <div class="pager"><a class="prev" href="lore.html"><span class="dir">Previous</span> &larr; lore</a><a class="next" href="craft.html"><span class="dir">Next</span> craft &rarr;</a></div>

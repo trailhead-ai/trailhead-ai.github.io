@@ -38,7 +38,7 @@
         <li><a href="camp.html">camp &mdash; workspaces</a></li>
         <li><a href="craft.html">craft &mdash; process</a></li>
         <li><a href="portage.html">portage &mdash; shipping</a></li>
-        <li><a href="outpost.html">outpost &mdash; review</a></li>
+        <li><a href="outpost.html">outpost &mdash; cockpit</a></li>
       </ul>
     </aside>
 
@@ -48,16 +48,18 @@
       <p class="lede">Trailhead installs by cloning the repository and running one command. There is no package to download, no remote fetch, and no <code>pip install</code> step &mdash; the checkout is the source.</p>
 
       <div class="note">
-        <strong>Let your agent do it.</strong> Trailhead ships an install guide written for agents. Tell yours: <em>&ldquo;Read https://github.com/trailhead-ai/trailhead/blob/main/INSTALL.md and set trailhead up for me.&rdquo;</em> It checks your prerequisites, asks which plugins you want, installs them, puts the CLIs on your PATH, and joins or creates your lore vaults.
+        <strong>Let your agent do it.</strong> Trailhead ships an install guide written for agents. Tell yours: <em>&ldquo;Read https://github.com/trailhead-ai/trailhead/blob/main/INSTALL.md and set trailhead up for me.&rdquo;</em> It works through the guide with you step by step: it checks your prerequisites, asks which plugins you want, installs them, puts the CLIs on your PATH, makes sure the machine has a GitHub login, sets up Outpost and keeps it running, joins or creates your lore vaults, lets the machine sign vault commits unattended, and finishes only when <code>trailhead doctor</code> reports the host ready. Every step is safe to re-run, so it also brings a half-configured machine the rest of the way.
       </div>
 
       <h2>Requirements</h2>
       <ul>
         <li><strong>Python 3.11 or newer.</strong> Trailhead has zero third-party runtime dependencies &mdash; the standard library is all it needs. Your system <code>python3</code> may well be older than 3.11; check with <code>python3 --version</code> before you start.</li>
-        <li><strong>git.</strong> Used for the checkout and for the memory vault, which is itself a git repository.</li>
+        <li><strong>git, with your identity set.</strong> Used for the checkout and for the memory vault, which is itself a git repository. lore commits to the vault as you, so <code>git config --global user.name</code> and <code>user.email</code> must both be set.</li>
+        <li><strong>tmux.</strong> Every camp workspace runs in its own tmux session.</li>
         <li><strong>A supported shell</strong> &mdash; <code>bash</code>, <code>zsh</code>, or <code>fish</code>.</li>
         <li><strong>An agent harness.</strong> Claude Code is the harness that ships today. Trailhead detects it by the presence of a <code>~/.claude</code> directory.</li>
-        <li><strong>The GitHub CLI</strong> (<code>gh</code>), authenticated &mdash; only needed if you want <code>portage</code> to open, watch, and merge pull requests.</li>
+        <li><strong>The GitHub CLI</strong> (<code>gh</code>), authenticated. <code>portage</code> uses it to open, watch, and merge pull requests, Outpost&rsquo;s setup uses it to clone its repository (which is not public: setup works only for accounts that have been given access), and it is the usual credential for syncing lore vaults with their remotes.</li>
+        <li><strong>Node 22 or newer, and npm</strong>, for building and running the Outpost daemon.</li>
       </ul>
 
       <h2>Install</h2>
@@ -67,7 +69,7 @@
 <span class="p">$ cd trailhead</span>
 <span class="p">$ ./bin/trailhead install</span></pre>
 
-      <p>With no flags, <code>install</code> auto-detects your harness, installs all five agent-plugins, and builds command-line shims for the plugins that ship a CLI. It prints a summary of what it did and what you still need to do.</p>
+      <p>With no flags, <code>install</code> auto-detects your harness, installs every agent-plugin &mdash; <code>lore</code>, <code>camp</code>, <code>craft</code>, <code>portage</code>, <code>outpost</code>, and <code>trailhead</code>, a small one that tells you at the start of a session when your install is behind its source &mdash; and builds command-line shims for the plugins that ship a CLI. It prints a summary of what it did and what you still need to do.</p>
 
       <p>Here is what happens under the covers, in order:</p>
       <ol>
@@ -75,7 +77,9 @@
         <li><strong>Resolve the effective config</strong> &mdash; the config file (default <code>config/default.toml</code>) merged with any command-line overrides, producing the set of harnesses, plugins, and individual subagents and skills to install.</li>
         <li><strong>Compose and wire each harness</strong> under a lock: build the selected plugin trees, then register them with the harness.</li>
         <li><strong>Build the CLI shim directory</strong> &mdash; one small wrapper per CLI-bearing plugin, each pointing back at your checkout.</li>
+        <li><strong>Install the user-level rules</strong> that the wired plugins ship, into each harness.</li>
         <li><strong>Bootstrap lore</strong> &mdash; create the default vault as a git repository, seed its config, and install the vault write guardrail. This step is idempotent, and if it fails the whole install fails rather than leaving you half-configured.</li>
+        <li><strong>Register the core vault</strong> &mdash; copy the checkout&rsquo;s bundled <code>core-vault/</code> into trailhead&rsquo;s own state directory and register it with lore as <code>core</code>, a read-only, trusted vault. This step prints one line saying what it did and never fails the install; if a vault named <code>core</code> already exists and is not trailhead&rsquo;s copy, it declines and says why.</li>
         <li><strong>Print the summary.</strong></li>
       </ol>
 
@@ -95,33 +99,50 @@
         <li><code>TRAILHEAD_ROOT</code>, pointing at your checkout.</li>
         <li>The shim directory on your <code>PATH</code>, so <code>lore</code>, <code>camp</code>, and <code>portage</code> resolve.</li>
         <li>A <code>trailhead</code> shell function that re-resolves itself from the profile line at every shell startup. This is why moving or re-cloning the checkout only requires editing that one line &mdash; you do not need to re-run the installer.</li>
-        <li>A <code>camp</code> wrapper function. Camp never moves your shell by itself, so this wrapper is what lets <code>camp new</code> and <code>camp remove</code> actually change your working directory. Without it those commands still do their work and print the path, they just leave you where you were &mdash; and <code>camp resume</code> refuses outright rather than printing a line that would do nothing.</li>
+        <li>A <code>camp</code> wrapper function for <code>camp remove</code>. Removing a workspace from inside it deletes the directory your shell is standing in; camp prints the group&rsquo;s first member repo as the place to go, and the wrapper takes you there. Without it, <code>camp remove</code> still does its work and prints the path, but leaves you where you were. <code>camp new</code> needs no wrapper &mdash; it hands your terminal to a tmux session already rooted in the workspace.</li>
       </ul>
 
       <p>Finally, start a fresh agent session so the harness picks up the newly installed plugins. An already-running session will not see them.</p>
 
       <h2>Verify</h2>
-      <p><code>trailhead doctor</code> prints a read-only report of what is installed. It never changes anything and never gates &mdash; it always exits 0 unless the report itself crashes, so treat it as information, not as a pass/fail check.</p>
+      <p><code>trailhead doctor</code> prints a read-only report: what is installed, where it was installed from, and whether this machine is ready to use. It never changes anything. The report ends with one verdict line, <code>HOST READY</code> or <code>HOST NOT READY</code>, and that line is the answer &mdash; doctor always exits 0, so read the verdict, not the exit code.</p>
 
 <pre><span class="p">$ trailhead doctor</span>
 trailhead doctor (read-only report):
 
   claude_code:
     marketplace: trailhead (registered)
-    installed: camp, craft, lore, outpost, portage
+    installed: camp, craft, lore, outpost, portage, trailhead
 
   CLIs on PATH:
     lore: /Users/you/.local/state/trailhead/bin/lore
     camp: /Users/you/.local/state/trailhead/bin/camp
     portage: /Users/you/.local/state/trailhead/bin/portage
-    trailhead: /Users/you/.local/state/trailhead/bin/trailhead
+    outpost-gateway: /Users/you/.local/state/trailhead/bin/outpost-gateway
+    trailhead: /Users/you/.local/state/trailhead/bin/trailhead (note: a pip-installed trailhead earlier on PATH can shadow the shellenv function)
   shim dir: /Users/you/.local/state/trailhead/bin (present)
-  python3: Python 3.11.9</pre>
+  python3: Python 3.12.3
 
-      <p>Pass <code>--json</code> for a machine-readable version of the same report.</p>
+  install provenance:
+    checkout: /Users/you/code/trailhead
+    wired at: 9c3e1b7d2a4f6e8c0b1d3f5a7c9e2b4d6f8a0c1e (2026-11-13T16:48:47Z)
+    last update check: ok (2026-11-16T09:12:05Z)
+
+  host readiness:
+    [ok] forge:default: reachable from this shell (the background service's access is not checked)
+    [ok] outpost: Outpost is configured and built
+    [ok] vault:default: vault default is a git repository with a remote and is synced
+    [ok] signing: this host signs unattended (key 256 SHA256:… you@laptop (ED25519))
+    [ok] author: this host makes vault content
+    [missing] supervisor: no supervisor entry keeps Outpost running
+      fix: trailhead outpost enable
+      (INSTALL.md step 7)
+  HOST NOT READY: 1 missing, 0 could not be checked</pre>
+
+      <p>Every <code>[missing]</code> item prints a one-line <code>fix:</code> you can run as shown, and names the step of the agent install guide it belongs to. Run each fix and re-run doctor until the verdict reads <code>HOST READY</code>. An item doctor could not confirm, usually a remote it could not reach, shows as <code>[could-not-check]</code> and also counts against the verdict. Pass <code>--json</code> for a machine-readable version of the same report.</p>
 
       <h2>Choosing what to install</h2>
-      <p>You do not have to take all five plugins. The most common starting point is memory alone:</p>
+      <p>You do not have to take every plugin. The most common starting point is memory alone:</p>
 
 <pre><span class="p">$ ./bin/trailhead install --plugin lore</span>
 <span class="c"># or a couple of them</span>
@@ -145,7 +166,7 @@ trailhead doctor (read-only report):
         </table>
       </div>
 
-      <p>Command-line flags are runtime overrides of the config file: <code>--plugin</code> replaces the resolved plugin set, and <code>--harness</code> overrides detection.</p>
+      <p>Command-line flags are runtime overrides of the config file: <code>--plugin</code> replaces the resolved plugin set, and <code>--harness</code> overrides detection. Keep in mind that <code>trailhead update</code> re-wires from <code>config/default.toml</code>, so a plugin you left out of a narrower install comes back on the next update.</p>
 
       <h3>Config files, for finer control</h3>
       <p>To go further than the flags allow &mdash; picking individual subagents and skills, targeting several harnesses differently, or pointing a skill at your own file &mdash; write a config. Drop <code>*.toml</code> files in the repo's <code>config/</code> directory; everything there except <code>default.toml</code> is gitignored, so your own configs never show up as changes in the checkout.</p>
@@ -188,7 +209,9 @@ name = "claude_code"
             <tr><td><code>~/.local/state/lore/vaults/default/</code></td><td>Your default memory vault, a git repository</td></tr>
             <tr><td><code>~/.local/state/lore/</code></td><td>The derived search index</td></tr>
             <tr><td><code>~/.config/lore/config.json</code></td><td>The vault registry</td></tr>
+            <tr><td><code>~/.local/state/trailhead/core-vault/</code></td><td>trailhead&rsquo;s own read-only <code>core</code> vault, copied from the checkout</td></tr>
             <tr><td><code>~/.config/camp/groups/</code></td><td>Your group definitions, one TOML file each</td></tr>
+            <tr><td><code>~/.config/outpost/config.toml</code></td><td>The Outpost daemon&rsquo;s config, including the <code>checkout</code> trailhead keeps up to date</td></tr>
           </tbody>
         </table>
       </div>
@@ -199,7 +222,9 @@ name = "claude_code"
 <pre><span class="p">$ trailhead update --check</span>   <span class="c"># read-only: is anything behind?</span>
 <span class="p">$ trailhead update</span>           <span class="c"># fetch, fast-forward, and re-wire &mdash; asks first</span></pre>
 
-      <p><code>update</code> fast-forwards your checkout to its tracked branch and re-wires every plugin. It asks for confirmation first, or takes <code>--yes</code>. It refuses a checkout with uncommitted changes, and if re-wiring fails partway, it rolls the checkout back so a failed upgrade changes nothing. If your outpost <code>config.toml</code> names a <code>checkout</code>, the same command also fast-forwards, rebuilds, and restarts the outpost daemon.</p>
+      <p><code>update</code> fast-forwards your checkout to its tracked branch and re-wires every plugin. It asks for confirmation first, or takes <code>--yes</code>. It refuses a checkout with uncommitted changes, and if re-wiring fails partway, it rolls the checkout back so a failed upgrade changes nothing. If your outpost <code>config.toml</code> names a <code>checkout</code>, the same command also fast-forwards, rebuilds, and restarts the outpost daemon. A successful run ends by printing doctor&rsquo;s host-readiness verdict line.</p>
+
+      <p><code>--check</code> fetches at most once every 24 hours; <code>--window</code> changes that interval and <code>--timeout</code> how long the fetch may take. With the <code>trailhead</code> plugin installed, a new agent session runs the same check and mentions it when you are behind. It never upgrades on its own. Set <code>session_start_update_check = false</code> in your config, or <code>TRAILHEAD_DISABLE_UPDATE_CHECK</code> in the environment, to turn the notice off.</p>
 
       <div class="note">
         <strong>Upgrades are additive.</strong> Re-running <code>install</code> only ever adds. Removing a plugin from your config does not remove it from the install. To actually drop pieces, uninstall and re-install with a narrower config.
@@ -220,9 +245,11 @@ name = "claude_code"
             <tr><td><code>trailhead install</code></td><td>Install plugins into your harness(es) and the plugin CLIs onto PATH</td></tr>
             <tr><td><code>trailhead uninstall</code></td><td>Remove the entire install. Keeps your data. <code>--yes</code>, <code>--quiet</code>, <code>--json</code></td></tr>
             <tr><td><code>trailhead doctor</code></td><td>Read-only report of what is installed. <code>--json</code></td></tr>
-            <tr><td><code>trailhead update</code></td><td>Upgrade the install, and a configured outpost daemon, from the checkout's tracked branch. <code>--check</code>, <code>--json</code>, <code>--yes</code>, <code>--dry-run</code></td></tr>
+            <tr><td><code>trailhead update</code></td><td>Upgrade the install, and a configured outpost daemon, from the checkout's tracked branch. <code>--check</code>, <code>--automatic</code>, <code>--json</code>, <code>--yes</code>, <code>--dry-run</code>, <code>--timeout SECONDS</code>, <code>--window SECONDS</code></td></tr>
             <tr><td><code>trailhead shellenv</code></td><td>Print the shell environment to evaluate. <code>--shell fish|zsh|bash</code></td></tr>
             <tr><td><code>trailhead outpost &lt;verb&gt;</code></td><td>Manage the outpost daemon: <code>start</code>, <code>stop</code>, <code>status</code>, <code>restart</code>, <code>open</code>, <code>enable</code>, <code>disable</code></td></tr>
+            <tr><td><code>trailhead gateway register</code></td><td>Register this agent session with Outpost&rsquo;s gateway. The plugin&rsquo;s SessionStart hook runs the same step for you</td></tr>
+            <tr><td><code>trailhead core show &lt;kind&gt;/&lt;name&gt;</code></td><td>Print a record from trailhead&rsquo;s own read-only <code>core</code> vault</td></tr>
           </tbody>
         </table>
       </div>
@@ -237,8 +264,14 @@ name = "claude_code"
       <h3><code>lore</code> or <code>camp</code> is not found after installing</h3>
       <p>The <code>shellenv</code> line is missing from your profile, or you have not restarted your shell. Run <code>trailhead doctor</code> and look at the shim directory line.</p>
 
-      <h3><code>camp resume</code> refuses to run, or <code>camp new</code> does not move me into the workspace</h3>
-      <p>Both are the shell wrapper being absent. <code>camp new</code> and <code>camp remove</code> still complete their work and print the workspace path, but cannot change your directory; <code>camp resume</code> stops rather than printing an instruction that would silently do nothing. Add the <code>shellenv</code> line and restart your shell.</p>
+      <h3><code>camp remove</code> leaves me in a deleted directory</h3>
+      <p>That is the shell wrapper being absent. <code>camp remove</code> still completes its work and prints the repo to return to, but cannot change your directory, and says so in a one-line tip. Add the <code>shellenv</code> line and restart your shell.</p>
+
+      <h3><code>camp new</code> creates the workspace but no session</h3>
+      <p>camp could not reach tmux. The workspace is still created and its path printed, with a warning naming the reason. Install tmux, then run <code>camp attach &lt;slug&gt;</code> to open the session.</p>
+
+      <h3><code>doctor</code> ends with <code>HOST NOT READY</code></h3>
+      <p>Each item marked <code>[missing]</code> prints the command that fixes it and the step of <a href="https://github.com/trailhead-ai/trailhead/blob/main/INSTALL.md">the install guide</a> it belongs to. Run each fix, then run <code>trailhead doctor</code> again; one fix can reveal the next.</p>
 
       <h3>The agent cannot see the new skills</h3>
       <p>Plugins are loaded when a session starts. Quit the agent session and start a fresh one.</p>

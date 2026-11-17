@@ -38,7 +38,7 @@
         <li><a href="camp.html">camp &mdash; workspaces</a></li>
         <li><a href="craft.html">craft &mdash; process</a></li>
         <li><a href="portage.html">portage &mdash; shipping</a></li>
-        <li><a href="outpost.html">outpost &mdash; review</a></li>
+        <li><a href="outpost.html">outpost &mdash; cockpit</a></li>
       </ul>
     </aside>
 
@@ -54,12 +54,12 @@
 
 <pre><span class="p">$ trailhead doctor</span></pre>
 
-      <p>You want to see your harness listed with the plugins you installed, and each CLI resolving to a path inside the shim directory. Then confirm the memory vault exists and is healthy:</p>
+      <p>You want to see your harness listed with the plugins you installed, each CLI resolving to a path inside the shim directory, and a last line that reads <code>HOST READY</code>. If it reads <code>HOST NOT READY</code>, every item marked <code>[missing]</code> prints the one-line command that fixes it &mdash; run those and check again. Then confirm the memory vault exists and is healthy:</p>
 
 <pre><span class="p">$ lore status</span>
 <span class="p">$ lore vault ls</span></pre>
 
-      <p>The installer creates a <code>default</code> vault as a git repository. If <code>lore vault ls</code> shows it, memory is ready to use.</p>
+      <p>The installer creates a <code>default</code> vault as a git repository, and registers <code>core</code>, a read-only vault of trailhead&rsquo;s own records. If <code>lore vault ls</code> shows <code>default</code>, memory is ready to use.</p>
 
       <h2>Step 2 &mdash; Capture your first memory</h2>
       <p>This is the highest-value thing to adopt first, and it works no matter what else you install.</p>
@@ -100,18 +100,18 @@ the offset query degrades past about 50k rows.</pre>
 
 <pre><span class="p">$ camp group myproduct --scaffold</span></pre>
 
-      <p>Then re-run with <code>--member</code> flags once you have edited it. Two things to know: each repository belongs to exactly one group, and authoring refuses to overwrite an existing config unless you pass <code>--force</code>.</p>
+      <p>Edit the stub, then run <code>camp group myproduct</code> to wire the session hooks. Two things to know: each repository belongs to exactly one group, and authoring a group from <code>--member</code> flags refuses to overwrite an existing config unless you pass <code>--force</code>.</p>
 
       <div class="note">
         Working in a single repository? A group of one is fine, and still gets you workspaces and scoped memory. You can add members later by editing the TOML.
       </div>
 
       <h2>Step 4 &mdash; Open a workspace</h2>
-      <p>A <strong>workspace</strong> cuts a git worktree in every member repository, all on a matching branch, and provisions each one. Create it with a slug describing the change:</p>
+      <p>A <strong>workspace</strong> cuts a git worktree in every member repository, all on a matching branch, provisions each one, and gives the whole thing its own tmux session. Create it with a slug describing the change:</p>
 
 <pre><span class="p">$ camp new add-billing</span></pre>
 
-      <p>Provisioning runs in the background. Check on it, and see the git state across every member at once:</p>
+      <p>That drops you into the workspace&rsquo;s tmux session, at the directory holding every member&rsquo;s worktree. Provisioning runs in the background. Check on it, and list the group&rsquo;s workspaces with their sessions:</p>
 
 <pre><span class="p">$ camp status</span>
 <span class="p">$ camp list</span></pre>
@@ -120,14 +120,19 @@ the offset query degrades past about 50k rows.</pre>
 
 <pre><span class="p">$ camp foreach git status --short</span></pre>
 
-      <p>When you are finished with the change, tear the whole thing down in one step:</p>
+      <p>Detach from tmux whenever you like; the session keeps running. Come back with:</p>
 
-<pre><span class="p">$ camp remove --name add-billing</span></pre>
+<pre><span class="p">$ camp attach add-billing</span></pre>
 
-      <p>Workspaces are isolated, so you can keep several open at once and switch between them without them interfering.</p>
+      <p>When you are finished with the change, stop its session and tear the whole thing down:</p>
+
+<pre><span class="p">$ camp stop add-billing</span>
+<span class="p">$ camp remove --name add-billing</span></pre>
+
+      <p>Workspaces are isolated, so you can keep several open at once and switch between them without them interfering &mdash; <code>camp attach</code> from inside one session moves you to another without closing the first.</p>
 
       <h2>Step 5 &mdash; Run a change through craft</h2>
-      <p>Now start an agent session inside the workspace and let it run the arc of the change. The rituals are invoked as skills:</p>
+      <p>Now start an agent session in a pane of the workspace&rsquo;s tmux session &mdash; run <code>claude</code> there &mdash; and let it run the arc of the change. The rituals are invoked as skills:</p>
 
       <div class="table-scroll">
         <table>
@@ -155,7 +160,7 @@ the offset query degrades past about 50k rows.</pre>
       <p>That pushes every active repository, opens linked pull requests, and starts watching CI. Then <code>/portage:pull_request monitor</code> watches the checks, triages failures and review comments, and reports when everything is clean.</p>
 
       <div class="note">
-        <strong>Nothing merges unless you authorize it.</strong> Merging is fail-closed: without <code>auto_merge</code> set in your group's release configuration, portage refuses to merge anything at all. Turning it on is a deliberate act. See the <a href="portage.html">portage page</a> before you enable it.
+        <strong>Nothing merges unless you authorize it.</strong> Merging is fail-closed: unless <code>auto_merge</code> is set in your group's release configuration, portage stops with the pull requests ready and waits for you to tell it to merge. Setting <code>auto_merge</code> grants standing authorization and is a deliberate act. See the <a href="portage.html">portage page</a> before you enable it.
       </div>
 
       <p>You will need the GitHub CLI (<code>gh</code>) authenticated, and GitHub is the only code host implemented today.</p>
@@ -163,11 +168,11 @@ the offset query degrades past about 50k rows.</pre>
       <h2>What the daily loop looks like</h2>
       <p>Once it is set up, a working day tends to go:</p>
       <ol>
-        <li><strong>Open a workspace</strong> for the change &mdash; <code>camp new &lt;slug&gt;</code>.</li>
-        <li><strong>Start a session</strong> in it and let the agent search the vault for what you already know about the area.</li>
+        <li><strong>Open a workspace</strong> for the change &mdash; <code>camp new &lt;slug&gt;</code>, or <code>camp attach &lt;slug&gt;</code> to pick one back up.</li>
+        <li><strong>Start a session</strong> in its tmux session and let the agent search the vault for what you already know about the area.</li>
         <li><strong>Work the change</strong>, with the agent capturing decisions and dead-ends as it goes.</li>
         <li><strong>Flush the session</strong> so what you learned outlives it &mdash; <code>/lore:flush</code>.</li>
-        <li><strong>Ship</strong> when it is ready, then tear the workspace down.</li>
+        <li><strong>Ship</strong> when it is ready, then stop and tear the workspace down &mdash; <code>camp stop</code>, then <code>camp remove</code>.</li>
       </ol>
       <p>The compounding part is step 4. A vault that has been flushed consistently for a month is why the agent stops asking you the same questions.</p>
 

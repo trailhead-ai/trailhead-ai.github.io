@@ -38,7 +38,7 @@
         <li><a href="camp.html">camp &mdash; workspaces</a></li>
         <li><a href="craft.html">craft &mdash; process</a></li>
         <li><a href="portage.html">portage &mdash; shipping</a></li>
-        <li><a href="outpost.html">outpost &mdash; review</a></li>
+        <li><a href="outpost.html">outpost &mdash; cockpit</a></li>
       </ul>
     </aside>
 
@@ -57,11 +57,13 @@
 
       <h3>The vault</h3>
       <p>A vault is a git repository of markdown records. <code>lore init</code> scaffolds the default one at <code>$XDG_STATE_HOME/lore/vaults/default</code> (<code>~/.local/state/lore/vaults/default</code> on a stock machine, macOS included) and registers it in <code>~/.config/lore/config.json</code>. Each record is two files under a per-kind directory: <code>&lt;kind&gt;/&lt;name&gt;.md</code> for the body and <code>&lt;kind&gt;/&lt;name&gt;.json</code> for the sidecar &mdash; title, status, keywords, related-record edges, timestamps, and provenance.</p>
-      <p>Because a vault is an ordinary git repo, backup and sharing are just a remote. <code>lore sync</code> stages, commits, pulls, and pushes every configured vault; <code>lore status</code> names any vault holding records that exist in exactly one place.</p>
+      <p>Because a vault is an ordinary git repo, backup and sharing are just a remote, and publishing to it is automatic. <code>lore record create</code>, <code>lore record update</code>, and a default <code>lore flush</code> each request a background publish for the vault they wrote and return immediately. The publish is debounced and single-flight per vault: it waits for the vault&rsquo;s writes to go quiet, then runs one commit, pull, and push, so a burst of writes becomes one sync rather than one per write. A vault configured with <code>auto_publish: false</code> opts out and publishes only when you ask.</p>
+      <p><code>lore sync</code> is the converge-now path: it stages, commits, pulls, and pushes every configured vault in the foreground (<code>--pull-only</code> integrates what the remote has without committing or pushing anything). When two machines changed the same vault, sync settles the conflict itself &mdash; record sidecars merge field by field, so edits to different fields publish with nobody involved. Each vault ends with one outcome &mdash; <code>converged</code>, <code>published</code>, <code>holding</code>, <code>refused</code>, <code>retries-exhausted</code>, <code>in-progress</code>, or <code>awaiting-person</code> &mdash; and <code>--json</code> reports it per vault. A conflict that genuinely needs judgment ends <code>awaiting-person</code>, leaving the vault clean and held for <code>lore resolve &lt;vault&gt;</code>, which shows each conflicting field with both sides and takes your pick. <code>lore status</code> names any vault holding records that exist in exactly one place.</p>
 
       <h3>Layered vaults</h3>
       <p>You can register more than one vault and lore searches them together. Each carries a <strong>scope</strong>, and a write routes to the most specific vault that matches: <code>repo</code> &gt; <code>product</code> &gt; <code>suite</code> &gt; <code>team</code> &gt; <code>default</code>. Your personal <code>default</code> vault is the unconditional floor &mdash; a write that matches nothing else lands there. A vault can be restricted to particular record kinds with <code>--record</code>, and <code>lore vault resolve --kind &lt;kind&gt;</code> reports where a write would land right now before you make it.</p>
       <p>A vault registered with <code>--shared</code> is marked untrusted. Its hits still show up in search, but the human output wraps them in an <code>&lt;external-memory&gt;</code> fence with the content entity-escaped, and the skills instruct the agent to treat fenced content as reference data &mdash; never as instructions. This is the seam that lets a team share a vault without letting a teammate&rsquo;s note steer someone else&rsquo;s agent.</p>
+      <p>One scope sits outside the routing order: <code>read-only</code> registers a folder lore searches but never writes to. Adding one makes you say how far to trust it: <code>--shared</code> fences its hits like any shared vault, and <code>--trusted</code> reads them as your own.</p>
 
       <h3>Records: a closed set of nine kinds</h3>
       <p>The kind set is closed on purpose. Nine kinds is a taxonomy an agent can hold in its head and apply consistently; an open set becomes a junk drawer.</p>
@@ -73,11 +75,11 @@
           </thead>
           <tbody>
             <tr><td><code>decision</code></td><td>A non-obvious architectural choice and the reasoning behind it &mdash; the lightweight, in-flight form</td></tr>
-            <tr><td><code>adr</code></td><td>A formal architecture decision record; convention treats one as immutable once it is <code>active</code></td></tr>
+            <tr><td><code>adr</code></td><td>A formal architecture decision record; its body is frozen once it is <code>active</code></td></tr>
             <tr><td><code>lesson</code></td><td>A mistake plus a concrete prevention check, so the same mistake is catchable next time</td></tr>
             <tr><td><code>task</code></td><td>Anything worth seeing through: implementation work, a deferred item, an abandoned approach, an external thing to watch. Carries <code>parent</code> and <code>depends-on</code> edges</td></tr>
             <tr><td><code>area</code></td><td>The mental model of a codebase area &mdash; files, gotchas, conventions. Feeds the area map</td></tr>
-            <tr><td><code>spec</code></td><td>A frozen specification artifact, the input a plan is built from</td></tr>
+            <tr><td><code>spec</code></td><td>A specification artifact, the input a plan is built from; its body is frozen once it is <code>ready</code></td></tr>
             <tr><td><code>collaboration</code></td><td>Working-style preferences and conventions &mdash; how you want to be worked with</td></tr>
             <tr><td><code>blob</code></td><td>Freeform capture that genuinely fits nothing else</td></tr>
             <tr><td><code>session</code></td><td>One note per working session: the running candidate log</td></tr>
@@ -105,6 +107,14 @@
         </table>
       </div>
 
+      <h3>Frozen records</h3>
+      <p>Some records carry a commitment, and lore enforces it at write time rather than leaving it to convention. An <code>adr</code> is frozen from <code>active</code> onward, a <code>spec</code> from <code>ready</code> onward, a <code>decision</code> at every status, and a <code>task</code> once it is <code>done</code>, <code>dropped</code>, or <code>superseded</code>. A plain <code>lore record update</code> that would change a frozen body is refused, and the refusal names the two ways forward:</p>
+      <ul>
+        <li><strong><code>lore record amend</code></strong> corrects the body in place when the fix stays inside what the record already decides. It takes a <code>--reason</code> and records who asked for it, and every amend lands in the record&rsquo;s change history, which <code>lore record history</code> prints.</li>
+        <li><strong><code>lore record supersede &lt;old&gt; --by &lt;new&gt;</code></strong> replaces the record when the change moves its scope. It is the only way a record reaches <code>superseded</code>, and it writes the edge so a reader landing on the old record finds the new one.</li>
+      </ul>
+      <p>The <code>/lore:correct</code> skill makes that call for the agent: whether a fix is applied now or tracked, and for a frozen record whether it is an amend or a supersession.</p>
+
       <h3>Areas and the area map</h3>
       <p>An <code>area</code> record is a profile of one part of your system: a name, a one-line summary, a keyword set, and a body describing the files, gotchas, and conventions. <code>lore areas</code> prints the <strong>area map</strong> &mdash; every area&rsquo;s name, summary, and keywords in one compact listing. That is what makes recall explainable rather than lucky: the agent reads the map as part of normal task analysis, matches the task to one or more areas, and pulls that area&rsquo;s accumulated memory with <code>lore search 'area:&lt;name&gt;'</code>. It can then say <em>&ldquo;I searched the auth-service area because this touches the login flow&rdquo;</em> instead of producing context from nowhere.</p>
 
@@ -112,7 +122,7 @@
       <p>Search speaks a subset of KQL against the index. Facets and scalars combine with boolean operators:</p>
       <ul>
         <li><strong>Scalar fields:</strong> <code>kind:</code>, <code>status:</code>, <code>repo:</code>, <code>team:</code>, <code>product:</code>, <code>suite:</code></li>
-        <li><strong>List facets:</strong> <code>area:</code>, <code>keyword:</code>, <code>phase:</code>, and <code>related-&lt;kind&gt;:</code> for every record kind (<code>related-task:</code>, <code>related-spec:</code>, &hellip;)</li>
+        <li><strong>List facets:</strong> <code>area:</code>, <code>keyword:</code>, <code>phase:</code>, <code>supersedes:</code>, <code>superseded-by:</code>, and <code>related-&lt;kind&gt;:</code> for every record kind (<code>related-task:</code>, <code>related-spec:</code>, &hellip;)</li>
         <li><strong>Labels:</strong> <code>label.&lt;key&gt;:&lt;value&gt;</code> for an exact match, <code>has:label.&lt;key&gt;</code> for existence. A namespaced key uses dot-for-slash &mdash; the stored key <code>claude-code/model</code> is queried as <code>label.claude-code.model:opus</code></li>
         <li><strong>Ranges:</strong> <code>&gt;=</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&lt;</code> on <code>created-at</code>, <code>updated-at</code>, <code>last-referenced-at</code></li>
         <li><strong>Composition:</strong> <code>and</code> / <code>or</code> / <code>not</code>, a <code>-</code> exclusion prefix, parenthesized groups, <code>kind:(spec or task)</code> shorthand, quoted phrases, and bare terms for BM25-ranked full text over title, keywords, and body</li>
@@ -120,10 +130,10 @@
       <p>An unknown field is a hard error with a &ldquo;did you mean&rdquo; suggestion rather than a silent empty result. Wildcards, fuzzy matching, boosts, and regex are deliberately unsupported.</p>
 
       <h3>Sessions, candidates, and the flush watermark</h3>
-      <p>A <code>session</code> record is one note per working session, keyed by the harness session id (or the worktree name as a fallback). During work the agent appends <strong>candidates</strong> &mdash; <code>lore session candidate --kind decision --phase build</code>, body piped in on stdin. A candidate is deliberately cheap: it costs a line, it needs no title, and it commits to nothing. Capture liberally; judgment comes later. Logging a candidate flips the session <code>dirty</code>.</p>
-      <p><strong>Flush</strong> is where judgment happens. The agent reads the session with <code>lore session show --json</code>, finds the <strong>outstanding</strong> candidates &mdash; those logged after the <code>flushed-at</code> watermark stored in the sidecar annotations &mdash; and evaluates each one: promote it to a durable record, or discard it as session-local noise. Then <code>lore flush</code> stamps the session <code>clean</code>, writes a new watermark, and commits. The watermark is what makes flush re-runnable mid-session without re-promoting everything you already dealt with.</p>
+      <p>A <code>session</code> record is one note per working session, keyed by the harness session id (or the worktree name as a fallback). During work the agent appends <strong>candidates</strong> &mdash; <code>lore session candidate --kind decision --phase build</code>, body piped in on stdin; both <code>--kind</code> and <code>--phase</code> are required. A candidate is deliberately cheap: it costs a line, it needs no title, and it commits to nothing. Capture liberally; judgment comes later. Logging a candidate flips the session <code>dirty</code>.</p>
+      <p><strong>Flush</strong> is where judgment happens. The agent reads the session with <code>lore session show --json</code>, finds the <strong>outstanding</strong> candidates &mdash; those logged after the <code>flushed-at</code> watermark stored in the sidecar annotations &mdash; and evaluates each one: promote it to a durable record, or discard it as session-local noise. Then <code>lore flush</code> stamps the session <code>clean</code>, writes a new watermark, commits the session record, and requests a background publish for every vault. The watermark is what makes flush re-runnable mid-session without re-promoting everything you already dealt with.</p>
       <div class="note">
-        <p><code>lore flush</code> commits the session record&rsquo;s own paths and nothing else. The records the flush just created usually live in a <em>different</em>, scope-routed vault &mdash; so <code>lore sync</code> afterwards is not optional. Flush ends by naming any vault still holding unsynced work.</p>
+        <p>The records a flush promotes usually live in a <em>different</em>, scope-routed vault from the session note, which is why the default flush asks every vault to publish rather than only its own. <code>lore flush --wait</code> runs the commit, pull, and push in-process before returning, for a caller that chains on a completed push; <code>--no-sync</code> commits the session record only and names what is left uncommitted. A vault with <code>auto_publish: false</code> is skipped and named &mdash; run <code>lore sync</code> to converge it.</p>
       </div>
 
       <h3>The derived index</h3>
@@ -134,7 +144,7 @@
       <ul>
         <li><strong>Search before deciding.</strong> Starting work in an unfamiliar area, or about to repeat an approach that may have failed before &mdash; run <code>lore areas</code>, then <code>lore search 'area:&lt;name&gt;'</code>. This is a decision the agent makes, not something that happens to it.</li>
         <li><strong>Capture during work.</strong> A decision made in passing, a dead-end, a gotcha, something deferred &mdash; each becomes a session candidate as it arises. This is the default capture path; a direct <code>lore record create</code> is reserved for deliberately authored artifacts (a <code>task</code>, <code>spec</code>, or <code>area</code> profile) or an explicit &ldquo;pin this one now&rdquo;.</li>
-        <li><strong>Flush at the end.</strong> Evaluate the outstanding candidates into records, flip the session clean, sync the vaults.</li>
+        <li><strong>Flush at the end.</strong> Evaluate the outstanding candidates into records and flip the session clean. The flush publishes in the background; <code>lore sync</code> is there when you want every vault converged before you walk away.</li>
       </ul>
       <p>Marking that an existing record was <em>used</em> is a separate, cheaper move: <code>lore session referenced &lt;kind&gt;/&lt;name&gt;</code> stamps <code>last-referenced-at</code> so you can later find the notes that actually earn their keep.</p>
 
@@ -148,8 +158,9 @@
             <tr><td><code>/lore:record</code></td><td>Capture one deliberate item now &mdash; a session candidate by default, a direct record write as the exception</td></tr>
             <tr><td><code>/lore:search</code></td><td>Run a KQL-subset query against the index and synthesize the hits; read-only, never writes</td></tr>
             <tr><td><code>/lore:research</code></td><td>Dispatch a research subagent &mdash; <code>investigator</code> for deep questions, <code>researcher</code> for lookups</td></tr>
-            <tr><td><code>/lore:flush</code></td><td>Evaluate outstanding candidates into records, flip the session clean, then sync</td></tr>
-            <tr><td><code>/lore:sync</code></td><td>Stage, commit, pull, and push every configured vault</td></tr>
+            <tr><td><code>/lore:flush</code></td><td>Evaluate outstanding candidates into records, flip the session clean, and request a background publish for every vault</td></tr>
+            <tr><td><code>/lore:sync</code></td><td>Converge every configured vault now &mdash; commit, pull, push &mdash; and settle any conflict the sync left for a person</td></tr>
+            <tr><td><code>/lore:correct</code></td><td>Correct a record that is wrong or out of date: decide whether the fix is applied now or tracked, and for a frozen record whether it is an amend or a supersession, then do it</td></tr>
           </tbody>
         </table>
       </div>
@@ -180,12 +191,17 @@
             <tr><td><code>lore status</code></td><td>Report ruleset drift per harness and every vault holding uncommitted, unpushed, or remote-less records</td></tr>
             <tr><td><code>lore search &lt;query&gt;</code></td><td>Query the global index. <code>--json</code>, <code>--limit N</code> (default 20)</td></tr>
             <tr><td><code>lore areas</code></td><td>Print the area map &mdash; every area&rsquo;s name, one-liner, and keywords</td></tr>
-            <tr><td><code>lore record</code></td><td><code>create</code> / <code>update</code> / <code>show</code> / <code>rename</code> / <code>delete</code>. Sidecar metadata via <code>--status</code>, <code>--keyword</code>, <code>--related KIND=NAME</code>, <code>--label</code>, <code>--annotation</code>; routing via <code>--repo</code> / <code>--product</code> / <code>--suite</code> / <code>--team</code> / <code>--vault</code></td></tr>
+            <tr><td><code>lore record</code></td><td><code>create</code> / <code>update</code> / <code>show</code> / <code>rename</code> / <code>delete</code>; <code>amend</code> and <code>supersede</code> for frozen records; <code>history</code> for a record&rsquo;s change log; <code>criteria</code> for a spec&rsquo;s acceptance criteria as JSON. Sidecar metadata via <code>--status</code>, <code>--keyword</code>, <code>--related KIND=NAME</code>, <code>--label</code>, <code>--annotation</code>; routing via <code>--repo</code> / <code>--product</code> / <code>--suite</code> / <code>--team</code> / <code>--vault</code></td></tr>
             <tr><td><code>lore session</code></td><td><code>candidate</code> (log a finding, body on stdin), <code>referenced</code> (stamp a record as used), <code>show</code> (read the session, <code>--json</code> for the sidecar and watermark)</td></tr>
-            <tr><td><code>lore flush</code></td><td>Flip a session clean and commit it. No argument for the current session, <code>all</code> for every dirty session, or a KQL query to select a set</td></tr>
-            <tr><td><code>lore sync</code></td><td>Stage, commit, pull, push. <code>--vault &lt;name&gt;</code> for one, <code>--message</code> to set the commit subject</td></tr>
+            <tr><td><code>lore flush</code></td><td>Flip a session clean, commit it, and request a background publish. No argument for the current session, <code>all</code> for every dirty session, or a KQL query to select a set. <code>--wait</code> publishes in-process; <code>--no-sync</code> skips the publish</td></tr>
+            <tr><td><code>lore sync</code></td><td>Converge now: stage, commit, pull, push, settling conflicts on the way. <code>--vault &lt;name&gt;</code> for one, <code>--message</code> to set the commit subject, <code>--pull-only</code> to integrate without publishing, <code>--json</code> for the per-vault outcome</td></tr>
+            <tr><td><code>lore publish</code></td><td>The debounced, single-flight publish worker for one vault that record writes and flush start in the background. <code>--vault &lt;name&gt;</code>, <code>--quiet-for</code> for the debounce window</td></tr>
+            <tr><td><code>lore resolve</code></td><td><code>&lt;vault&gt;</code> reports a held vault&rsquo;s conflicts (<code>--json</code>) and settles them; <code>take</code> and <code>take-file</code> pick a side for one record field or one file</td></tr>
             <tr><td><code>lore task</code></td><td><code>list --vault &lt;name&gt;</code> (filter by <code>--status</code>, or <code>--runnable</code> for ready tasks whose dependencies are done) and <code>graph &lt;name&gt;</code> for the containment subtree plus depends-on edges</td></tr>
-            <tr><td><code>lore vault</code></td><td><code>add</code> / <code>delete</code> / <code>ls</code> / <code>config</code>, plus <code>resolve --kind &lt;kind&gt;</code> to see where a write would route</td></tr>
+            <tr><td><code>lore pipeline</code></td><td>A read-only, cross-vault board of in-flight design work. <code>--vault</code> to narrow it, <code>--json</code></td></tr>
+            <tr><td><code>lore vault</code></td><td><code>add</code> / <code>delete</code> / <code>ls</code> / <code>config</code>, plus <code>resolve --kind &lt;kind&gt;</code> to see where a write would route and <code>reformat</code> to rewrite every sidecar into canonical form. <code>add</code> takes <code>--scope</code> (including <code>read-only</code>), <code>--record</code>, <code>--shared</code>, and <code>--trusted</code></td></tr>
+            <tr><td><code>lore health</code></td><td>Report dangling links and links to dropped or superseded records, across every vault. Read-only</td></tr>
+            <tr><td><code>lore signing</code></td><td><code>enable</code> / <code>status</code>: sign vault commits unattended with a host SSH key</td></tr>
             <tr><td><code>lore reindex</code></td><td>Rebuild the derived index from the vault tree</td></tr>
           </tbody>
         </table>
@@ -205,22 +221,23 @@ client changes." | lore session candidate --kind lesson --phase build
 <span class="c"># An existing record actually got used — stamp it.</span>
 <span class="p">$</span> lore session referenced decision/rotate-refresh-tokens-on-use
 
-<span class="c"># End of session: promote the keepers, then commit everything.</span>
+<span class="c"># End of session: promote the keepers and flush.</span>
 <span class="p">$</span> lore session show --json          <span class="c"># candidates + flushed-at watermark</span>
-<span class="p">$</span> lore record create --kind lesson \
+<span class="p">$</span> printf '%s' "Rotation breaks mobile clients mid-request. Fix: a server-side grace window." \
+    | lore record create --kind lesson \
     --title "Refresh rotation needs a server-side grace window" \
     --keyword auth --keyword mobile \
     --related area=auth-service \
     --related decision=rotate-refresh-tokens-on-use
-<span class="p">$</span> lore flush                        <span class="c"># session -> clean, watermark stamped</span>
-<span class="p">$</span> lore sync                         <span class="c"># commit + push every vault</span>
+<span class="p">$</span> lore flush                        <span class="c"># session -> clean, publish requested</span>
+<span class="p">$</span> lore sync                         <span class="c"># optional: converge every vault now</span>
 
 <span class="c"># Three weeks later, a different session, no shared context:</span>
 <span class="p">$</span> lore search 'area:auth-service and kind:lesson'
 <span class="p">$</span> lore record show lesson/refresh-rotation-needs-a-server-side-grace-window</pre>
 
       <h2>Vault writes go through the CLI</h2>
-      <p><code>lore init</code> installs a <code>PreToolUse</code> guardrail into your harness settings that blocks <code>Edit</code>, <code>Write</code>, <code>MultiEdit</code>, and <code>NotebookEdit</code> against any path inside a vault. The hook canonicalizes paths at call time, so it follows the <code>default</code> symlink to wherever it currently points; generated <code>permissions.deny</code> rules sit underneath it as defense in depth. One subtree is exempt: each vault&rsquo;s <code>sites/</code> directory, a free-write zone for static pages that ride the vault&rsquo;s sync.</p>
+      <p><code>lore init</code> installs a <code>PreToolUse</code> guardrail into your harness settings that blocks <code>Edit</code>, <code>Write</code>, <code>MultiEdit</code>, and <code>NotebookEdit</code> against any path inside a vault. The hook canonicalizes paths at call time, so it follows the <code>default</code> symlink to wherever it currently points; generated <code>permissions.deny</code> rules sit underneath it as defense in depth. Two top-level subtrees of each vault are exempt free-write zones, because they hold content rather than records: <code>sites/</code>, for static pages that ride the vault&rsquo;s sync, and <code>outpost/</code>, for the Outpost daemon&rsquo;s per-vault configuration.</p>
       <p>The point is not distrust of the agent. It is that a record is a body <em>and</em> a sidecar <em>and</em> an index row, written under a lock; a hand-edit produces a record that looks fine on disk and is invisible to search. Routing every write through <code>lore record</code> keeps those three in agreement.</p>
 
       <h2>Scope and honest limits</h2>
@@ -230,7 +247,7 @@ client changes." | lore session candidate --kind lesson --phase build
         <p><strong>Claude Code is the only harness implemented.</strong> The ruleset install goes through Trailhead&rsquo;s harness seam and degrades visibly for a harness without user-level ruleset support, but nothing else is shipped today.</p>
         <p><strong>Search is lexical, not semantic.</strong> Facets plus BM25 full text. There is no embedding index; asking a question in words the notes do not use will miss. An opt-in local semantic index is on the roadmap and deliberately not a dependency.</p>
         <p><strong>Shared-vault content is untrusted input.</strong> The human output fences and escapes it, but <code>--json</code> output carries no fence &mdash; it exposes a <code>shared</code> flag per hit instead, and the body arrives verbatim.</p>
-        <p><strong>Relations are not checked for existence.</strong> <code>--related task=nope</code> validates clean; the index materializes whatever edges happen to resolve. Renames are swept (<code>lore record rename</code> rewrites inbound references), but a typo is yours to find.</p>
+        <p><strong>Relations are not checked for existence.</strong> <code>--related task=nope</code> validates clean; the index materializes whatever edges happen to resolve. Renames are swept (<code>lore record rename</code> rewrites inbound references), but a typo is yours to find &mdash; <code>lore health</code> lists every link that points at no record.</p>
       </div>
       <p>One install caveat worth stating plainly: the <code>lore</code> CLI itself works in a vanilla checkout &mdash; its path resolvers fall back to plain <code>XDG_CONFIG_HOME</code> / <code>XDG_STATE_HOME</code> (or their POSIX defaults under <code>$HOME</code>) when Trailhead is not importable. But <code>lore init</code> reaches for Trailhead&rsquo;s harness detection to install the ruleset and the guardrail, so the full bootstrap expects the Trailhead checkout to be present. You also need a git identity &mdash; <code>$LORE_EMAIL</code> or <code>git config --global user.email</code> &mdash; before the first record write, and <code>lore init</code> warns you if neither resolves.</p>
 
